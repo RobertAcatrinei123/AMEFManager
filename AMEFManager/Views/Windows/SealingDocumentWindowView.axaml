@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:AMEFManager.ViewModels.Windows"
+        xmlns:views="using:AMEFManager.Views.UserControls"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="AMEFManager.Views.Windows.SealingDocumentWindowView"
+        x:DataType="vm:SealingDocumentWindowViewModel">
+    <DockPanel>
+
+        <StackPanel DockPanel.Dock="Bottom"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="Șterge"
+                    Command="{Binding DeleteCommand}"
+                    Background="#ef4444"
+                    Foreground="White"
+                    HorizontalContentAlignment="Center"
+                    MinWidth="120"
+                    Margin="0,0,16,0" />
+            <Button Content="Salvează"
+                    Command="{Binding SaveCommand}"
+                    HorizontalContentAlignment="Center"
+                    MinWidth="120" />
+        </StackPanel>
+
+        <views:SealingDocumentUserControl DataContext="{Binding SealingDocumentUserControlViewModel}" />
+
+    </DockPanel>
+</UserControl>

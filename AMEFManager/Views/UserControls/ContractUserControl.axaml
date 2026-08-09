@@ -1,0 +1,115 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.UserControls"
+             xmlns:models="clr-namespace:AMEFManager.Models"
+             xmlns:helpers="clr-namespace:AMEFManager.Helpers"
+             xmlns:uc="clr-namespace:AMEFManager.Views.UserControls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="AMEFManager.Views.UserControls.ContractUserControl"
+             x:DataType="vm:ContractUserControlViewModel">
+
+    <UserControl.Resources>
+        <helpers:ContractDisplayConverter x:Key="ContractDisplayConverter" />
+    </UserControl.Resources>
+
+    <Panel>
+
+        <StackPanel IsVisible="{Binding IsLoading}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12">
+            <ProgressBar IsIndeterminate="True" Width="200" />
+            <TextBlock Text="Se incarca contractele..." HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <ScrollViewer IsVisible="{Binding !IsLoading}">
+            <StackPanel>
+
+                <StackPanel Margin="0,0,0,16" MaxWidth="500" HorizontalAlignment="Left">
+                    <TextBlock Text="Selecteaza contract" Margin="0,0,0,4" />
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Content="✕"
+                                Command="{Binding ClearSelectedContractCommand}"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center" />
+                        <ComboBox ItemsSource="{Binding FilteredContracts}"
+                                  SelectedItem="{Binding SelectedContract}"
+                                  PlaceholderText="Contract nou"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:Contract">
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource ContractDisplayConverter}">
+                                                <Binding Path="Number" />
+                                                <Binding Path="Date" />
+                                                <Binding Path="Type.Name" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </DockPanel>
+                </StackPanel>
+
+                <TextBlock Text="Date contract" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+
+                <WrapPanel Orientation="Horizontal">
+
+                    <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
+                        <TextBlock Text="Numar *" Margin="0,0,0,4" />
+                        <NumericUpDown Value="{Binding Number}" Minimum="0" FormatString="0" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
+                        <TextBlock Text="Data *" Margin="0,0,0,4" />
+                        <DatePicker SelectedDate="{Binding Date}" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
+                        <TextBlock Text="Valabil pana la *" Margin="0,0,0,4" />
+                        <DatePicker SelectedDate="{Binding ValidUntil}" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350" VerticalAlignment="Center">
+                        <CheckBox IsChecked="{Binding IsActive}" Content="Este activ?" Margin="0,24,0,0" />
+                    </StackPanel>
+
+                </WrapPanel>
+
+                <TextBlock Text="Tip contract" FontWeight="Bold" FontSize="16" Margin="0,8,0,8" />
+
+                <uc:ContractTypeUserControl DataContext="{Binding ContractTypeUserControlViewModel}" Margin="24,0,0,0" />
+
+                <TextBlock Text="Client" FontWeight="Bold" FontSize="16" Margin="0,16,0,8" />
+
+                <uc:ClientUserControl DataContext="{Binding ClientUserControlViewModel}" Margin="24,0,0,0" />
+
+                <TextBlock Text="Lista AMEF" FontWeight="Bold" FontSize="16" Margin="0,16,0,8" />
+                
+                <ItemsControl ItemsSource="{Binding Amefs}" Margin="24,0,0,16">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:Amef">
+                            <TextBlock Margin="0,0,0,4">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} - {1} ({2})">
+                                        <Binding Path="Model" />
+                                        <Binding Path="Series" />
+                                        <Binding Path="NUI" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Panel>
+
+</UserControl>

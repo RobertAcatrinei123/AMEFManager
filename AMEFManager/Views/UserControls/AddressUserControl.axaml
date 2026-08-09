@@ -1,0 +1,112 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.UserControls"
+             xmlns:models="clr-namespace:AMEFManager.Models"
+             xmlns:helpers="clr-namespace:AMEFManager.Helpers"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AMEFManager.Views.UserControls.AddressUserControl"
+             x:DataType="vm:AddressUserControlViewModel">
+
+    <UserControl.Resources>
+        <helpers:AddressDisplayConverter x:Key="AddressDisplayConverter" />
+    </UserControl.Resources>
+
+    <Panel>
+        
+        <StackPanel IsVisible="{Binding IsLoading}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12">
+            <ProgressBar IsIndeterminate="True"
+                         Width="200" />
+            <TextBlock Text="Se incarca adresele..."
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+        
+        <StackPanel IsVisible="{Binding !IsLoading}">
+
+            <StackPanel Margin="0,0,0,16" MaxWidth="400" HorizontalAlignment="Left">
+                <TextBlock Text="Selecteaza adresa" Margin="0,0,0,4" />
+                <DockPanel>
+                    <Button DockPanel.Dock="Right"
+                            Content="✕"
+                            Command="{Binding ClearSelectedAddressCommand}"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding FilteredAddresses}"
+                              SelectedItem="{Binding SelectedAddress}"
+                              PlaceholderText="Adresa noua"
+                              HorizontalAlignment="Stretch">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:Address">
+                                <TextBlock>
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource AddressDisplayConverter}">
+                                            <Binding Path="City" />
+                                            <Binding Path="Street" />
+                                            <Binding Path="StreetNumber" />
+                                            <Binding Path="Block" />
+                                            <Binding Path="Floor" />
+                                            <Binding Path="Apartment" />
+                                            <Binding Path="County" />
+                                            <Binding Path="Other" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </DockPanel>
+            </StackPanel>
+
+            <WrapPanel Orientation="Horizontal">
+
+                <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                    <TextBlock Text="Judet" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding County}" PlaceholderText="Judet" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                    <TextBlock Text="Localitate" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding City}" PlaceholderText="Localitate" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                    <TextBlock Text="Strada" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding Street}" PlaceholderText="Strada" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,16,12" MinWidth="120" Width="150">
+                    <TextBlock Text="Numar" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding StreetNumber}" PlaceholderText="Numar" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,16,12" MinWidth="120" Width="150">
+                    <TextBlock Text="Bloc" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding Block}" PlaceholderText="Bloc" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,16,12" MinWidth="100" Width="120">
+                    <TextBlock Text="Etaj" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding Floor}" PlaceholderText="Etaj" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,16,12" MinWidth="100" Width="120">
+                    <TextBlock Text="Apartament" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding Apartment}" PlaceholderText="Apartament" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                    <TextBlock Text="Altele" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding Other}" PlaceholderText="Altele" />
+                </StackPanel>
+
+            </WrapPanel>
+
+        </StackPanel>
+
+    </Panel>
+
+</UserControl>

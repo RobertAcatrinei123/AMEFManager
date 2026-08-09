@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AMEFManager.ViewModels.UserControls"
+             xmlns:helpers="using:AMEFManager.Helpers"
+             xmlns:views="using:AMEFManager.Views.UserControls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="AMEFManager.Views.UserControls.SealingDocumentUserControl"
+             x:DataType="vm:SealingDocumentUserControlViewModel">
+
+    <UserControl.Resources>
+        <helpers:SealingDocumentDisplayConverter x:Key="SealingDocumentDisplayConverter" />
+    </UserControl.Resources>
+    
+    <Panel>
+
+        <StackPanel IsVisible="{Binding IsLoading}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12">
+            <ProgressBar IsIndeterminate="True"
+                         Width="200" />
+            <TextBlock Text="Se incarca documentele de sigilare..."
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <ScrollViewer IsVisible="{Binding !IsLoading}">
+            <StackPanel>
+
+                <StackPanel Margin="0,0,0,16" MaxWidth="500" HorizontalAlignment="Left">
+                    <TextBlock Text="Selecteaza document sigilare" Margin="0,0,0,4" />
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Content="✕"
+                                Command="{Binding ClearSelectedSealingDocumentCommand}"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center" />
+                        <ComboBox ItemsSource="{Binding FilteredSealingDocuments}"
+                                  SelectedItem="{Binding SelectedSealingDocument}"
+                                  PlaceholderText="Document sigilare nou"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource SealingDocumentDisplayConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </DockPanel>
+                </StackPanel>
+
+                <TextBlock Text="Date document sigilare" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+
+                <WrapPanel Orientation="Horizontal">
+
+                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                        <TextBlock Text="Număr *" Margin="0,0,0,4" />
+                        <NumericUpDown Value="{Binding Number}" Minimum="0" FormatString="0" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                        <TextBlock Text="Dată *" Margin="0,0,0,4" />
+                        <DatePicker SelectedDate="{Binding Date}" />
+                    </StackPanel>
+
+                </WrapPanel>
+                
+                <TextBlock Text="AMEF" FontWeight="Bold" FontSize="16" Margin="0,16,0,8" />
+                <views:AmefUserControl DataContext="{Binding AmefUserControlViewModel}" Margin="24,0,0,0"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Panel>
+
+</UserControl>

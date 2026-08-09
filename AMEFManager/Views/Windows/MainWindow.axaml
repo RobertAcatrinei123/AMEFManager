@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:windows="clr-namespace:AMEFManager.ViewModels.Windows"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:vm="using:AMEFManager.ViewModels"
+        x:Class="AMEFManager.Views.Windows.MainWindow"
+        x:DataType="windows:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="AMEFManager">
+        
+        <DockPanel>
+                <Menu DockPanel.Dock="Top">
+                        <MenuItem Header="Baza de date">
+                                <MenuItem Header="Acte aditionale" Command="{Binding NavigateCommand}" CommandParameter="AdditionalDocuments"></MenuItem>
+                                <MenuItem Header="Adrese" Command="{Binding NavigateCommand}" CommandParameter="Addresses"></MenuItem>
+                                <MenuItem Header="Amef" Command="{Binding NavigateCommand}" CommandParameter="Amef"></MenuItem>
+                                <MenuItem Header="Autorizatii" Command="{Binding NavigateCommand}" CommandParameter="Authorizations"></MenuItem>
+                                <MenuItem Header="Facturi" Command="{Binding NavigateCommand}" CommandParameter="Bills"></MenuItem>
+                                <MenuItem Header="Clienti" Command="{Binding NavigateCommand}" CommandParameter="Clients"></MenuItem>
+                                <MenuItem Header="Contracte" Command="{Binding NavigateCommand}" CommandParameter="Contracts"></MenuItem>
+                                <MenuItem Header="Tipuri de contracte" Command="{Binding NavigateCommand}" CommandParameter="ContractTypes"></MenuItem>
+                                <MenuItem Header="PV predare" Command="{Binding NavigateCommand}" CommandParameter="DeliveryDocuments"></MenuItem>
+                                <MenuItem Header="Persoane" Command="{Binding NavigateCommand}" CommandParameter="People"></MenuItem>
+                                <MenuItem Header="PV sigilare" Command="{Binding NavigateCommand}" CommandParameter="SealingDocuments"></MenuItem>
+                        </MenuItem>
+                </Menu>
+                <ContentControl Content="{Binding CurrentPage}" Padding="20" />
+                        
+        </DockPanel>
+</Window>
