@@ -1,0 +1,94 @@
+name: Build, Package, and Release (Velopack)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-pack:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        include:
+          - os: windows-latest
+            runtime: win-x64
+            os_name: win
+            executable_name: AMEFManager.exe
+          - os: macos-latest
+            runtime: osx-x64
+            os_name: osx
+            executable_name: AMEFManager
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Get Version from csproj
+        # This uses the .NET CLI to extract the <Version> tag from your .csproj
+        run: |
+          VERSION=$(dotnet msbuild AMEFManager/AMEFManager.csproj -getProperty:Version)
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Install Velopack CLI (vpk)
+        run: dotnet tool install -g vpk
+
+      - name: Build and Publish App
+        run: dotnet publish AMEFManager/AMEFManager.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -o ./publish
+
+      - name: Velopack Pack (Windows/macOS)
+        # We now use ${{ env.APP_VERSION }} which we grabbed from the csproj
+        run: vpk pack -u AMEFManager -v ${{ env.APP_VERSION }} -p ./publish -e ${{ matrix.executable_name }} -o ./Releases
+
+      - name: Upload Velopack Assets to Pipeline
+        uses: actions/upload-artifact@v4
+        with:
+          name: velopack-releases-${{ matrix.os_name }}
+          path: ./Releases/*
+
+  publish-release:
+    needs: build-and-pack
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write # Required to create a GitHub Release
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Get Version from csproj
+        run: |
+          VERSION=$(dotnet msbuild AMEFManager/AMEFManager.csproj -getProperty:Version)
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Download all release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: velopack-releases-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.APP_VERSION }}
+          name: Release ${{ env.APP_VERSION }}
+          generate_release_notes: true
+          files: release-assets/*
