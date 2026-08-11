@@ -44,7 +44,7 @@
                                     <TextBlock>
                                         <TextBlock.Text>
                                             <MultiBinding Converter="{StaticResource AdditionalDocumentDisplayConverter}">
-                                                <Binding Path="Nr" />
+                                                <Binding Path="Number" />
                                                 <Binding Path="Date" />
                                                 <Binding Path="Client.Name" />
                                             </MultiBinding>
@@ -62,7 +62,7 @@
 
                     <StackPanel Margin="0,0,16,12" MinWidth="120" Width="150">
                         <TextBlock Text="Numar *" Margin="0,0,0,4" />
-                        <NumericUpDown Value="{Binding Nr}" Minimum="0" FormatString="0" />
+                        <NumericUpDown Value="{Binding Number}" Minimum="0" FormatString="0" />
                     </StackPanel>
 
                     <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">

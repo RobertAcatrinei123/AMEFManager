@@ -47,11 +47,9 @@ public partial class ContractTypeUserControlViewModel : ViewModelBase
         
         try
         {
-            // Disable the automatic OnSelectedContractTypeChanged logic
             _hasBeenFiltered = true;
             SelectedContractType = null;
 
-            // Manually clear all fields
             Name = null;
             Value = null;
         }

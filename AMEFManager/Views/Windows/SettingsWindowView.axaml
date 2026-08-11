@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.Windows"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
+             x:Class="AMEFManager.Views.Windows.SettingsWindowView"
+             x:DataType="vm:SettingsWindowViewModel">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <TextBlock Grid.Row="0" Text="Setari Aplicatie" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+        
+        <StackPanel Grid.Row="1" Spacing="10">
+            <TextBlock Text="Cale Server (Server Path)"/>
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Grid.Column="0" Text="{Binding ServerPath}" Margin="0,0,10,0"/>
+                <Button Grid.Column="1" Content="..." Click="BrowseButton_Click"/>
+            </Grid>
+        </StackPanel>
+        
+        <Button Grid.Row="3" Content="Salveaza" Command="{Binding SaveCommand}" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+    </Grid>
+</UserControl>

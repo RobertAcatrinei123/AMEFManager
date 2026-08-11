@@ -58,11 +58,9 @@ public partial class AdditionalDocumentWindowViewModel : ViewModelBase
 
             DocumentUserControlViewModel.IsLoading = true;
 
-            // Save address
             var clientVm = DocumentUserControlViewModel.ClientUserControlViewModel;
             var savedClient = await clientVm.SaveClientAsync();
 
-            // Save document
             AdditionalDocument savedDocument;
             if (DocumentUserControlViewModel.SelectedDocument is null)
             {
@@ -74,7 +72,7 @@ public partial class AdditionalDocumentWindowViewModel : ViewModelBase
             else
             {
                 savedDocument = DocumentUserControlViewModel.SelectedDocument;
-                savedDocument.Nr = DocumentUserControlViewModel.Nr ?? 0;
+                savedDocument.Number = DocumentUserControlViewModel.Number ?? 0;
                 savedDocument.Date = DateOnly.FromDateTime(DocumentUserControlViewModel.Date!.Value.DateTime);
                 savedDocument.Client = savedClient;
                 savedDocument.ClientId = savedClient.Id;

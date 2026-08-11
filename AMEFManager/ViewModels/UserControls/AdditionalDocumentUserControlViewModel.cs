@@ -41,8 +41,8 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
     private AdditionalDocument? _selectedDocument;
 
     [ObservableProperty]
-    private int? _nr;
 
+    private int? _number;
     [ObservableProperty]
     private DateTimeOffset? _date;
 
@@ -53,12 +53,10 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
         
         try
         {
-            // Disable the automatic OnSelectedDocumentChanged logic
             _hasBeenFiltered = true;
             SelectedDocument = null;
 
-            // Manually clear all fields
-            Nr = null;
+            Number = null;
             Date = null;
             ClientUserControlViewModel.ClearSelectedClientCommand.Execute(null);
         }
@@ -94,13 +92,13 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
         {
             if (value is null)
             {
-                Nr = null;
+                Number = null;
                 Date = null;
                 ClientUserControlViewModel.ClearSelectedClientCommand.Execute(null);
             }
             else
             {
-                Nr = value.Nr;
+                Number = value.Number;
                 Date = new DateTimeOffset(value.Date.ToDateTime(TimeOnly.MinValue));
 
                 var matchingClient = ClientUserControlViewModel.FilteredClients
@@ -114,7 +112,7 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
         }
     }
 
-    partial void OnNrChanged(int? value) => OnFieldChanged();
+    partial void OnNumberChanged(int? value) => OnFieldChanged();
     partial void OnDateChanged(DateTimeOffset? value) => OnFieldChanged();
 
     private void OnFieldChanged()
@@ -136,7 +134,7 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
                     var selectedClient = ClientUserControlViewModel.SelectedClient;
 
             var filtered = _allDocuments.Where(d =>
-                (Nr == null || d.Nr == Nr) &&
+                (Number == null || d.Number == Number) &&
                 (selectedClient == null || d.ClientId == selectedClient.Id) ||
                 d.Equals(SelectedDocument)
             ).OrderBy(x => x.Id).ToList();
@@ -153,7 +151,7 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
     {
         var errors = new List<string>();
 
-        if (Nr == null || Nr <= 0)
+        if (Number == null || Number <= 0)
             errors.Add("Numarul documentului este obligatoriu.");
         if (Date is null)
             errors.Add("Data documentului este obligatorie.");
@@ -168,7 +166,7 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
         {
             return new AdditionalDocument
             {
-                Nr = Nr ?? 0,
+                Number = Number ?? 0,
                 Date = DateOnly.FromDateTime(Date!.Value.DateTime)
             };
         }

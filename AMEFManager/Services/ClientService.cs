@@ -14,7 +14,7 @@ public class ClientService : AbstractService<Client>
 
     public override Task<List<Client>> FindAll()
     {
-        return _entities.Include(c => c.Adress).Include(c => c.Person).ToListAsync();
+        return _entities.Include(c => c.Address).Include(c => c.Person).ToListAsync();
     }
 
     public async Task<Client?> FindByNationalIdentifier(string nationalIdentifier)

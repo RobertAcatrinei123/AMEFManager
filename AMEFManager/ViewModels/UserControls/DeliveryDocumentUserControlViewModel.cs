@@ -58,11 +58,9 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
         
         try
         {
-            // Disable the automatic OnSelectedDeliveryDocumentChanged logic
             _hasBeenFiltered = true;
             SelectedDeliveryDocument = null;
 
-            // Manually clear all fields
             Number = null;
             Date = null;
             

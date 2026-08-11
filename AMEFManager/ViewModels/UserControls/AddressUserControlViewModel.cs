@@ -65,11 +65,9 @@ public partial class AddressUserControlViewModel : ViewModelBase
         {
             _isUpdatingFromSelection = true;
             
-            // Disable the automatic OnSelectedAddressChanged logic
             _hasBeenFiltered = true;
             SelectedAddress = null;
 
-            // Manually clear all fields
             County = null;
             City = null;
             Street = null;

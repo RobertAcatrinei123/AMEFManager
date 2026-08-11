@@ -57,11 +57,9 @@ public partial class ClientUserControlViewModel : ViewModelBase
         {
             _isUpdatingFromSelection = true;
             
-            // Disable the automatic OnSelectedClientChanged logic
             _hasBeenFiltered = true;
             SelectedClient = null;
 
-            // Manually clear all fields
             Name = null;
             NationalIdentifier = null;
             RegistrationNumber = null;
@@ -274,7 +272,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
                 savedClient.Name = Name!;
                 savedClient.NationalIdentifier = NationalIdentifier!;
                 savedClient.RegistrationNumber = RegistrationNumber!;
-                savedClient.Adress = address;
+                savedClient.Address = address;
                 savedClient.AddressId = address.Id;
                 savedClient.Person = savedPerson;
                 savedClient.PersonId = savedPerson.Id;
@@ -283,7 +281,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
             else
             {
                 savedClient = GetSelectedClient();
-                savedClient.Adress = address;
+                savedClient.Address = address;
                 savedClient.AddressId = address.Id;
                 savedClient.Person = savedPerson;
                 savedClient.PersonId = savedPerson.Id;
@@ -296,7 +294,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
             savedClient.Name = Name!;
             savedClient.NationalIdentifier = NationalIdentifier!;
             savedClient.RegistrationNumber = RegistrationNumber!;
-            savedClient.Adress = address;
+            savedClient.Address = address;
             savedClient.AddressId = address.Id;
             savedClient.Person = savedPerson;
             savedClient.PersonId = savedPerson.Id;

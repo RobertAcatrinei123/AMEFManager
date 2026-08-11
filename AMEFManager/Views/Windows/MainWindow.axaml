@@ -25,6 +25,11 @@
                                 <MenuItem Header="Persoane" Command="{Binding NavigateCommand}" CommandParameter="People"></MenuItem>
                                 <MenuItem Header="PV sigilare" Command="{Binding NavigateCommand}" CommandParameter="SealingDocuments"></MenuItem>
                         </MenuItem>
+                        <MenuItem Header="Utilitare">
+                                <MenuItem Header="Setari" Command="{Binding NavigateCommand}" CommandParameter="Settings"></MenuItem>
+                                <MenuItem Header="Backup" Command="{Binding NavigateCommand}" CommandParameter="Backup"></MenuItem>
+                                <MenuItem Header="Deschidere folder date program" Command="{Binding OpenAppDataFolderCommand}"></MenuItem>
+                        </MenuItem>
                 </Menu>
                 <ContentControl Content="{Binding CurrentPage}" Padding="20" />
                         

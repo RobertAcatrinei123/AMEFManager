@@ -80,7 +80,7 @@ public partial class ClientWindowViewModel : ViewModelBase
         if (selected == null) return;
         
         var person = selected.Person;
-        var address = selected.Adress;
+        var address = selected.Address;
         var personAddress = person?.Address;
         
         await _clientService.Delete(selected);
@@ -93,7 +93,6 @@ public partial class ClientWindowViewModel : ViewModelBase
         }
         catch 
         {
-            // Ignore if they are referenced by other entities
         }
         
         await _clientService.SubmitChanges();

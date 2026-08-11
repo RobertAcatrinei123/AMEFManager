@@ -50,11 +50,9 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
         {
             _isUpdatingFromSelection = true;
             
-            // Disable the automatic OnSelectedAuthorizationChanged logic
             _hasBeenFiltered = true;
             SelectedAuthorization = null;
 
-            // Manually clear all fields
             Number = null;
             Date = null;
             Model = null;

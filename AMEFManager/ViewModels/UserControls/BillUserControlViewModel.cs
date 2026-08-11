@@ -50,11 +50,9 @@ public partial class BillUserControlViewModel : ViewModelBase
         {
             _isUpdatingFromSelection = true;
             
-            // Disable the automatic OnSelectedBillChanged logic
             _hasBeenFiltered = true;
             SelectedBill = null;
 
-            // Manually clear all fields
             BillDate = null;
             BillSeries = null;
             BillNumber = null;

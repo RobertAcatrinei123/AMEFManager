@@ -66,11 +66,9 @@ public partial class AmefUserControlViewModel : ViewModelBase
         {
             _isUpdatingFromSelection = true;
             
-            // Disable the automatic OnSelectedAmefChanged logic
             _hasBeenFiltered = true;
             SelectedAmef = null;
 
-            // Manually clear all fields
             Model = null;
             Series = null;
             Nui = null;

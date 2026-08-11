@@ -87,11 +87,9 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
             
             var amefVm = DeliveryDocumentUserControlViewModel.AmefUserControlViewModel;
 
-            // 1. Save Address (Amef Installation Address)
             var addressVm = amefVm.AddressUserControlViewModel;
             var address = await addressVm.SaveAddressAsync();
 
-            // 2. Save Bill
             var billVm = amefVm.BillUserControlViewModel;
             Bill savedBill;
             if (billVm.SelectedBill is null)
@@ -120,7 +118,6 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
             await billVm.LoadBillsAsync();
             billVm.SelectedBill = billVm.FilteredBills.FirstOrDefault(b => b.Id == savedBill.Id);
 
-            // 3. Save Authorization
             var authVm = amefVm.AuthorizationUserControlViewModel;
             Authorization savedAuth;
             if (authVm.SelectedAuthorization is null)
@@ -139,10 +136,8 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
             await authVm.LoadAuthorizationsAsync();
             authVm.SelectedAuthorization = authVm.FilteredAuthorizations.FirstOrDefault(a => a.Id == savedAuth.Id);
 
-            // 4. Save Contract
             var contractVm = amefVm.ContractUserControlViewModel;
             
-            // 4a. Save Contract Type
             var typeVm = contractVm.ContractTypeUserControlViewModel;
             ContractType savedType;
             if (typeVm.SelectedContractType is null)
@@ -163,7 +158,6 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
             var clientVm = contractVm.ClientUserControlViewModel;
             var savedClient = await clientVm.SaveClientAsync();
 
-            // Save Contract
             Contract savedContract;
             if (contractVm.SelectedContract is null)
             {
@@ -186,7 +180,7 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
                     savedContract.Type = savedType;
                     savedContract.ContractTypeId = savedType.Id;
                     savedContract.Client = savedClient;
-                    savedClient.PersonId = savedClient.PersonId; // safety
+                    savedClient.PersonId = savedClient.PersonId; 
                     savedContract.ClientId = savedClient.Id;
                     await _contractService.Add(savedContract);
                 }
@@ -208,7 +202,6 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
             contractVm.SelectedContract = contractVm.FilteredContracts.FirstOrDefault(c => c.Id == savedContract.Id);
 
 
-            // 5. Save Amef
             Amef savedAmef;
             if (amefVm.SelectedAmef is null)
             {
@@ -276,7 +269,6 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
             await amefVm.LoadAmefsAsync();
             amefVm.SelectedAmef = amefVm.FilteredAmefs.FirstOrDefault(a => a.Id == savedAmef.Id);
             
-            // 6. Save DeliveryDocument
             DeliveryDocument savedDeliveryDocument;
             if (DeliveryDocumentUserControlViewModel.SelectedDeliveryDocument is null)
             {

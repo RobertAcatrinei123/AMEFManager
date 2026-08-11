@@ -14,7 +14,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _currentPage = null;
         
-        // Start the background update check
         _ = CheckForUpdatesAsync();
     }
 
@@ -22,28 +21,22 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            // TODO: Replace with your actual GitHub repository URL
             var githubUrl = "https://github.com/RobertAcatrinei123/AMEFManager"; 
             var source = new Velopack.Sources.GithubSource(githubUrl, null, false);
             var mgr = new Velopack.UpdateManager(source);
 
-            // Check for new updates
             var newVersion = await mgr.CheckForUpdatesAsync();
             if (newVersion == null)
             {
-                // No update available
                 return;
             }
 
-            // Download the new version in the background
             await mgr.DownloadUpdatesAsync(newVersion);
 
-            // Stage the update to be applied when the app next restarts
             mgr.WaitExitThenApplyUpdates(newVersion);
         }
         catch (Exception ex)
         {
-            // Log or handle the update error gracefully
             Console.WriteLine($"Update failed: {ex.Message}");
         }
     }
@@ -69,7 +62,31 @@ public partial class MainWindowViewModel : ViewModelBase
             "DeliveryDocuments" => _currentScope.ServiceProvider.GetRequiredService<DeliveryDocumentWindowViewModel>(),
             "People" => _currentScope.ServiceProvider.GetRequiredService<PersonWindowViewModel>(),
             "SealingDocuments" => _currentScope.ServiceProvider.GetRequiredService<SealingDocumentWindowViewModel>(),
+            "Settings" => _currentScope.ServiceProvider.GetRequiredService<SettingsWindowViewModel>(),
+            "Backup" => _currentScope.ServiceProvider.GetRequiredService<BackupWindowViewModel>(),
             _ => throw new ArgumentException("Invalid navigation target")
         };
+    }
+    [RelayCommand]
+    private void OpenAppDataFolder()
+    {
+        var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var path = System.IO.Path.Combine(folder, "AMEFManager");
+        if (System.IO.Directory.Exists(path))
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to open folder: {ex.Message}");
+            }
+        }
     }
 }

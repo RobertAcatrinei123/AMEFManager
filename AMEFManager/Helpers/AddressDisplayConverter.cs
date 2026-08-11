@@ -9,7 +9,6 @@ public class AddressDisplayConverter : IMultiValueConverter
 {
     public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
     {
-        // values: City, Street, StreetNumber, Block, Floor, Apartment, County, Other
         var city = values.Count > 0 ? values[0] as string : null;
         var street = values.Count > 1 ? values[1] as string : null;
         var streetNumber = values.Count > 2 ? values[2] as string : null;

@@ -17,8 +17,8 @@ public class AdditionalDocumentDisplayConverter : IMultiValueConverter
         var parts = new List<string>();
 
         if (nr is int nrInt && nrInt > 0)
-            parts.Add($"Nr. {nrInt}");
 
+            parts.Add($"Number. {nrInt}");
         if (date is DateTimeOffset dto)
             parts.Add(dto.ToString("dd.MM.yyyy", culture));
         else if (date is DateOnly dateOnly)

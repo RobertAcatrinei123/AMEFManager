@@ -63,12 +63,18 @@ public partial class App : Application
         services.AddTransient<DeliveryDocumentWindowViewModel>();
         services.AddTransient<SealingDocumentWindowViewModel>();
 
+        services.AddSingleton<SettingsService>();
+        services.AddSingleton<BackupService>();
+        services.AddTransient<SettingsWindowViewModel>();
+        services.AddTransient<BackupWindowViewModel>();
         Services = services.BuildServiceProvider();
         
         using (var scope = Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
+            var backupService = scope.ServiceProvider.GetRequiredService<BackupService>();
+            backupService.PerformStartupBackupCheck();
         }
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

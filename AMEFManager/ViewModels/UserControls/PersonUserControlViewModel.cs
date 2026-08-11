@@ -74,11 +74,9 @@ public partial class PersonUserControlViewModel : ViewModelBase
         {
             _isUpdatingFromSelection = true;
             
-            // Disable the automatic OnSelectedPersonChanged logic
             _hasBeenFiltered = true;
             SelectedPerson = null;
 
-            // Manually clear all fields
             LastName = null;
             FirstName = null;
             Cnp = null;

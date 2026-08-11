@@ -62,7 +62,6 @@ public partial class ContractWindowViewModel : ViewModelBase
 
             ContractUserControlViewModel.IsLoading = true;
 
-            // Save contract type
             var typeVm = ContractUserControlViewModel.ContractTypeUserControlViewModel;
             ContractType savedType;
             
@@ -84,7 +83,6 @@ public partial class ContractWindowViewModel : ViewModelBase
             var clientVm = ContractUserControlViewModel.ClientUserControlViewModel;
             var savedClient = await clientVm.SaveClientAsync();
 
-            // Save contract
             Contract savedContract;
             if (ContractUserControlViewModel.SelectedContract is null)
             {

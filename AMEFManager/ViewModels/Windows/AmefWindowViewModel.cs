@@ -35,8 +35,8 @@ public partial class AmefWindowViewModel : ViewModelBase
                App.Services.GetRequiredService<PersonService>())
     {
     
-    }
 
+    }
     public AmefWindowViewModel(
         AmefService amefService,
         BillService billService,
@@ -81,11 +81,9 @@ public partial class AmefWindowViewModel : ViewModelBase
 
             AmefUserControlViewModel.IsLoading = true;
 
-            // 1. Save Address (Amef Installation Address)
             var addressVm = AmefUserControlViewModel.AddressUserControlViewModel;
             var address = await addressVm.SaveAddressAsync();
 
-            // 2. Save Bill
             var billVm = AmefUserControlViewModel.BillUserControlViewModel;
             Bill savedBill;
             if (billVm.SelectedBill is null)
@@ -114,7 +112,6 @@ public partial class AmefWindowViewModel : ViewModelBase
             await billVm.LoadBillsAsync();
             billVm.SelectedBill = billVm.FilteredBills.FirstOrDefault(b => b.Id == savedBill.Id);
 
-            // 3. Save Authorization
             var authVm = AmefUserControlViewModel.AuthorizationUserControlViewModel;
             Authorization savedAuth;
             if (authVm.SelectedAuthorization is null)
@@ -133,10 +130,8 @@ public partial class AmefWindowViewModel : ViewModelBase
             await authVm.LoadAuthorizationsAsync();
             authVm.SelectedAuthorization = authVm.FilteredAuthorizations.FirstOrDefault(a => a.Id == savedAuth.Id);
 
-            // 4. Save Contract
             var contractVm = AmefUserControlViewModel.ContractUserControlViewModel;
             
-            // 4a. Save Contract Type
             var typeVm = contractVm.ContractTypeUserControlViewModel;
             ContractType savedType;
             if (typeVm.SelectedContractType is null)
@@ -157,7 +152,6 @@ public partial class AmefWindowViewModel : ViewModelBase
             var clientVm = contractVm.ClientUserControlViewModel;
             var savedClient = await clientVm.SaveClientAsync();
 
-            // Save Contract
             Contract savedContract;
             if (contractVm.SelectedContract is null)
             {
@@ -180,7 +174,7 @@ public partial class AmefWindowViewModel : ViewModelBase
                     savedContract.Type = savedType;
                     savedContract.ContractTypeId = savedType.Id;
                     savedContract.Client = savedClient;
-                    savedClient.PersonId = savedClient.PersonId; // safety
+                    savedClient.PersonId = savedClient.PersonId; 
                     savedContract.ClientId = savedClient.Id;
                     await _contractService.Add(savedContract);
                 }
@@ -202,7 +196,6 @@ public partial class AmefWindowViewModel : ViewModelBase
             contractVm.SelectedContract = contractVm.FilteredContracts.FirstOrDefault(c => c.Id == savedContract.Id);
 
 
-            // 5. Save Amef
             Amef savedAmef;
             if (AmefUserControlViewModel.SelectedAmef is null)
             {
@@ -307,9 +300,8 @@ public partial class AmefWindowViewModel : ViewModelBase
         }
         catch 
         {
-            // Ignore if they are referenced by other entities
-        }
         
+        }
         await _amefService.SubmitChanges();
         AmefUserControlViewModel.ClearSelectedAmefCommand.Execute(null);
         await AmefUserControlViewModel.LoadAmefsAsync();

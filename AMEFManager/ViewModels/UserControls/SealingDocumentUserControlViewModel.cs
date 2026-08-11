@@ -58,11 +58,9 @@ public partial class SealingDocumentUserControlViewModel : ViewModelBase
         {
             _isUpdatingFromSelection = true;
             
-            // Disable the automatic OnSelectedSealingDocumentChanged logic
             _hasBeenFiltered = true;
             SelectedSealingDocument = null;
 
-            // Manually clear all fields
             Number = null;
             Date = null;
             

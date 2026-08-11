@@ -64,11 +64,9 @@ public partial class ContractUserControlViewModel : ViewModelBase
         
         try
         {
-            // Disable the automatic OnSelectedContractChanged logic
             _hasBeenFiltered = true;
             SelectedContract = null;
 
-            // Manually clear all fields
             Number = null;
             Date = null;
             IsActive = true;

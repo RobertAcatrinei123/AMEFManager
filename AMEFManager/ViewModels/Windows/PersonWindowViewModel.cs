@@ -53,11 +53,9 @@ public partial class PersonWindowViewModel : ViewModelBase
 
             PersonUserControlViewModel.IsLoading = true;
 
-            // Save address (creates new or updates existing)
             var addressVm = PersonUserControlViewModel.AddressUserControlViewModel;
             var address = await addressVm.SaveAddressAsync();
 
-            // Save person
             Person savedPerson;
 
             if (PersonUserControlViewModel.SelectedPerson is null)
@@ -145,7 +143,6 @@ public partial class PersonWindowViewModel : ViewModelBase
         }
         catch 
         {
-            // Ignore if referenced
         }
         
         
