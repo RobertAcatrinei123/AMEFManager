@@ -6,6 +6,7 @@ using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using AMEFManager.ViewModels.UserControls;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,24 +14,39 @@ namespace AMEFManager.ViewModels.Windows;
 
 public partial class ContractTypeWindowViewModel : ViewModelBase
 {
-    private readonly ContractTypeService _contractTypeService;
-
     public ContractTypeUserControlViewModel ContractTypeUserControlViewModel { get; }
+
+    [ObservableProperty] private string? _statusMessage;
+    [ObservableProperty] private string? _errorMessage;
 
     public ContractTypeWindowViewModel()
         : this(App.Services.GetRequiredService<ContractTypeService>())
     {
-    
     }
 
     public ContractTypeWindowViewModel(ContractTypeService contractTypeService)
     {
-        _contractTypeService = contractTypeService;
         ContractTypeUserControlViewModel = new ContractTypeUserControlViewModel(contractTypeService);
         ContractTypeUserControlViewModel.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType))
             {
+                StatusMessage = null;
+                ErrorMessage = null;
+                DeleteCommand.NotifyCanExecuteChanged();
+            }
+        };
+    }
+
+    public ContractTypeWindowViewModel(ContractTypeUserControlViewModel userControlViewModel)
+    {
+        ContractTypeUserControlViewModel = userControlViewModel;
+        ContractTypeUserControlViewModel.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType))
+            {
+                StatusMessage = null;
+                ErrorMessage = null;
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
@@ -39,39 +55,29 @@ public partial class ContractTypeWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveAsync()
     {
+        StatusMessage = null;
+        ErrorMessage = null;
         try
         {
             var errors = ContractTypeUserControlViewModel.Validate();
             if (errors.Count > 0)
             {
+                ErrorMessage = string.Join("\n", errors);
                 await MessageBox.ShowWarning(string.Join("\n", errors), "Campuri obligatorii necompletate");
                 return;
             }
 
             ContractTypeUserControlViewModel.IsLoading = true;
-            ContractType savedContractType;
-
-            if (ContractTypeUserControlViewModel.SelectedContractType is null)
-            {
-                savedContractType = ContractTypeUserControlViewModel.GetSelectedContractType();
-                await _contractTypeService.Add(savedContractType);
-            }
-            else
-            {
-                savedContractType = ContractTypeUserControlViewModel.SelectedContractType;
-                savedContractType.Name = ContractTypeUserControlViewModel.Name!;
-                savedContractType.Value = ContractTypeUserControlViewModel.Value ?? 0;
-            }
-
-            await _contractTypeService.SubmitChanges();
-            await ContractTypeUserControlViewModel.LoadContractTypesAsync();
-
-            ContractTypeUserControlViewModel.SelectedContractType =
-                ContractTypeUserControlViewModel.FilteredContractTypes.FirstOrDefault(c => c.Id == savedContractType.Id);
+            var saved = await ContractTypeUserControlViewModel.SaveContractTypeAsync();
+            StatusMessage = "Salvare realizată cu succes.";
+            ErrorMessage = null;
+            AppLogger.LogInfo($"Successfully saved ContractType: Id={saved.Id}, Name={saved.Name}, Value={saved.Value}");
         }
         catch (Exception e)
         {
-            System.Diagnostics.Debug.WriteLine($"[ERROR] Save failed in ContractTypeWindowViewModel.cs: {e}");
+            AppLogger.LogError($"Save failed in ContractTypeWindowViewModel: {e.Message}", e);
+            StatusMessage = null;
+            ErrorMessage = $"A apărut o eroare la salvare: {e.Message}";
             var msg = e.Message;
             if (e.InnerException != null) msg += "\nInner: " + e.InnerException.Message;
             await MessageBox.ShowError($"A aparut o eroare la salvare:\n{msg}");
@@ -87,13 +93,30 @@ public partial class ContractTypeWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanDelete))]
     private async Task DeleteAsync()
     {
-        var selected = ContractTypeUserControlViewModel.SelectedContractType;
-        if (selected == null) return;
-        
-        await _contractTypeService.Delete(selected);
-        
-        await _contractTypeService.SubmitChanges();
-        ContractTypeUserControlViewModel.ClearSelectedContractTypeCommand.Execute(null);
-        await ContractTypeUserControlViewModel.LoadContractTypesAsync();
+        if (ContractTypeUserControlViewModel.SelectedContractType == null) return;
+
+        StatusMessage = null;
+        ErrorMessage = null;
+        try
+        {
+            ContractTypeUserControlViewModel.IsLoading = true;
+            await ContractTypeUserControlViewModel.DeleteContractTypeAsync();
+            StatusMessage = "Înregistrarea a fost ștearsă cu succes.";
+            ErrorMessage = null;
+            AppLogger.LogInfo("ContractType deleted successfully.");
+        }
+        catch (Exception e)
+        {
+            AppLogger.LogError($"Delete failed in ContractTypeWindowViewModel: {e.Message}", e);
+            StatusMessage = null;
+            ErrorMessage = $"A apărut o eroare la ștergere: {e.Message}";
+            var msg = e.Message;
+            if (e.InnerException != null) msg += "\nInner: " + e.InnerException.Message;
+            await MessageBox.ShowError($"A aparut o eroare la stergere:\n{msg}");
+        }
+        finally
+        {
+            ContractTypeUserControlViewModel.IsLoading = false;
+        }
     }
 }

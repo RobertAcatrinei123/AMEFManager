@@ -6,6 +6,7 @@ using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using AMEFManager.ViewModels.UserControls;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,24 +14,39 @@ namespace AMEFManager.ViewModels.Windows;
 
 public partial class AuthorizationWindowViewModel : ViewModelBase
 {
-    private readonly AuthorizationService _authorizationService;
-
     public AuthorizationUserControlViewModel AuthorizationUserControlViewModel { get; }
+
+    [ObservableProperty] private string? _statusMessage;
+    [ObservableProperty] private string? _errorMessage;
 
     public AuthorizationWindowViewModel()
         : this(App.Services.GetRequiredService<AuthorizationService>())
     {
-    
     }
 
     public AuthorizationWindowViewModel(AuthorizationService authorizationService)
     {
-        _authorizationService = authorizationService;
         AuthorizationUserControlViewModel = new AuthorizationUserControlViewModel(authorizationService);
         AuthorizationUserControlViewModel.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(AuthorizationUserControlViewModel.SelectedAuthorization))
             {
+                StatusMessage = null;
+                ErrorMessage = null;
+                DeleteCommand.NotifyCanExecuteChanged();
+            }
+        };
+    }
+
+    public AuthorizationWindowViewModel(AuthorizationUserControlViewModel userControlViewModel)
+    {
+        AuthorizationUserControlViewModel = userControlViewModel;
+        AuthorizationUserControlViewModel.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(AuthorizationUserControlViewModel.SelectedAuthorization))
+            {
+                StatusMessage = null;
+                ErrorMessage = null;
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
@@ -39,40 +55,29 @@ public partial class AuthorizationWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveAsync()
     {
+        StatusMessage = null;
+        ErrorMessage = null;
         try
         {
             var errors = AuthorizationUserControlViewModel.Validate();
             if (errors.Count > 0)
             {
+                ErrorMessage = string.Join("\n", errors);
                 await MessageBox.ShowWarning(string.Join("\n", errors), "Campuri obligatorii necompletate");
                 return;
             }
 
             AuthorizationUserControlViewModel.IsLoading = true;
-            Authorization savedAuthorization;
-
-            if (AuthorizationUserControlViewModel.SelectedAuthorization is null)
-            {
-                savedAuthorization = AuthorizationUserControlViewModel.GetSelectedAuthorization();
-                await _authorizationService.Add(savedAuthorization);
-            }
-            else
-            {
-                savedAuthorization = AuthorizationUserControlViewModel.SelectedAuthorization;
-                savedAuthorization.Number = AuthorizationUserControlViewModel.Number ?? 0;
-                savedAuthorization.Date = DateOnly.FromDateTime(AuthorizationUserControlViewModel.Date!.Value.DateTime);
-                savedAuthorization.Model = AuthorizationUserControlViewModel.Model!;
-            }
-
-            await _authorizationService.SubmitChanges();
-            await AuthorizationUserControlViewModel.LoadAuthorizationsAsync();
-
-            AuthorizationUserControlViewModel.SelectedAuthorization =
-                AuthorizationUserControlViewModel.FilteredAuthorizations.FirstOrDefault(a => a.Id == savedAuthorization.Id);
+            var savedAuthorization = await AuthorizationUserControlViewModel.SaveAuthorizationAsync();
+            StatusMessage = "Salvare realizată cu succes.";
+            ErrorMessage = null;
+            AppLogger.LogInfo($"Successfully saved Authorization: Id={savedAuthorization?.Id}, Number={savedAuthorization?.Number}, Model={savedAuthorization?.Model}");
         }
         catch (Exception e)
         {
-            System.Diagnostics.Debug.WriteLine($"[ERROR] Save failed in AuthorizationWindowViewModel.cs: {e}");
+            AppLogger.LogError($"Save failed in AuthorizationWindowViewModel: {e.Message}", e);
+            StatusMessage = null;
+            ErrorMessage = $"A apărut o eroare la salvare: {e.Message}";
             var msg = e.Message;
             if (e.InnerException != null) msg += "\nInner: " + e.InnerException.Message;
             await MessageBox.ShowError($"A aparut o eroare la salvare:\n{msg}");
@@ -88,13 +93,30 @@ public partial class AuthorizationWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanDelete))]
     private async Task DeleteAsync()
     {
-        var selected = AuthorizationUserControlViewModel.SelectedAuthorization;
-        if (selected == null) return;
-        
-        await _authorizationService.Delete(selected);
-        
-        await _authorizationService.SubmitChanges();
-        AuthorizationUserControlViewModel.ClearSelectedAuthorizationCommand.Execute(null);
-        await AuthorizationUserControlViewModel.LoadAuthorizationsAsync();
+        if (AuthorizationUserControlViewModel.SelectedAuthorization == null) return;
+
+        StatusMessage = null;
+        ErrorMessage = null;
+        try
+        {
+            AuthorizationUserControlViewModel.IsLoading = true;
+            await AuthorizationUserControlViewModel.DeleteAuthorizationAsync();
+            StatusMessage = "Înregistrarea a fost ștearsă cu succes.";
+            ErrorMessage = null;
+            AppLogger.LogInfo("Authorization deleted successfully.");
+        }
+        catch (Exception e)
+        {
+            AppLogger.LogError($"Delete failed in AuthorizationWindowViewModel: {e.Message}", e);
+            StatusMessage = null;
+            ErrorMessage = $"A apărut o eroare la ștergere: {e.Message}";
+            var msg = e.Message;
+            if (e.InnerException != null) msg += "\nInner: " + e.InnerException.Message;
+            await MessageBox.ShowError($"A aparut o eroare la stergere:\n{msg}");
+        }
+        finally
+        {
+            AuthorizationUserControlViewModel.IsLoading = false;
+        }
     }
 }

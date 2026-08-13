@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -24,6 +24,9 @@ public partial class BillUserControlViewModel : ViewModelBase
         LoadBillsCommand.Execute(null);
         _hasBeenFiltered = false;
     }
+
+    [ObservableProperty]
+    private string _headerTitle = "Date Factură Achiziție";
 
     [ObservableProperty]
     private bool _isLoading;
@@ -81,7 +84,7 @@ public partial class BillUserControlViewModel : ViewModelBase
             return;
         }
 
-        Debug.Print("Selected bill changed");
+        AppLogger.LogDebug($"Selected Bill changed: Id={value?.Id}, Series={value?.BillSeries}, Number={value?.BillNumber}");
 
         try
         {
@@ -127,7 +130,8 @@ public partial class BillUserControlViewModel : ViewModelBase
         _hasBeenFiltered = true;
         try
         {
-                    var filtered = _allBills.Where(b =>
+            var filtered = _allBills.Where(b =>
+                (BillNumber == null || b.BillNumber == BillNumber) &&
                 StartsWith(b.BillSeries, BillSeries) ||
                 b.Equals(SelectedBill)
             ).OrderBy(x => x.Id).ToList();
@@ -178,5 +182,61 @@ public partial class BillUserControlViewModel : ViewModelBase
         }
 
         return SelectedBill;
+    }
+
+    public async Task<Bill> SaveBillAsync()
+    {
+        Bill savedBill;
+
+        if (SelectedBill is null)
+        {
+            var existing = await _billService.FindBySeriesAndNumber(BillSeries!, BillNumber ?? 0);
+            if (existing != null)
+            {
+                savedBill = existing;
+                if (BillDate.HasValue)
+                    savedBill.BillDate = DateOnly.FromDateTime(BillDate.Value.DateTime);
+                savedBill.BillSeries = BillSeries!;
+                savedBill.BillNumber = BillNumber ?? 0;
+                await _billService.Update(savedBill);
+            }
+            else
+            {
+                savedBill = GetSelectedBill();
+                await _billService.Add(savedBill);
+            }
+        }
+        else
+        {
+            savedBill = SelectedBill;
+            if (BillDate.HasValue)
+                savedBill.BillDate = DateOnly.FromDateTime(BillDate.Value.DateTime);
+            savedBill.BillSeries = BillSeries!;
+            savedBill.BillNumber = BillNumber ?? 0;
+            await _billService.Update(savedBill);
+        }
+
+        await _billService.SubmitChanges();
+        await LoadBillsAsync();
+        SelectedBill = FilteredBills.FirstOrDefault(b => b.Id == savedBill.Id);
+        AppLogger.LogInfo($"Successfully saved Bill: Id={savedBill.Id}, Series={savedBill.BillSeries}, Number={savedBill.BillNumber}");
+
+        return savedBill;
+    }
+
+    public async Task DeleteBillAsync()
+    {
+        if (SelectedBill is null)
+            return;
+
+        var toDelete = SelectedBill;
+        AppLogger.LogInfo($"Deleting Bill: Id={toDelete.Id}, Series={toDelete.BillSeries}, Number={toDelete.BillNumber}");
+
+        await _billService.Delete(toDelete);
+        await _billService.SubmitChanges();
+
+        ClearSelectedBill();
+        await LoadBillsAsync();
+        AppLogger.LogInfo($"Bill Id={toDelete.Id} deleted successfully.");
     }
 }

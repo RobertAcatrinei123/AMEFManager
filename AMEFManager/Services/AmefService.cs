@@ -20,6 +20,11 @@ public class AmefService : AbstractService<Amef>
             .Include(a => a.Authorization)
             .Include(a => a.Contract)
                 .ThenInclude(c => c.Client)
+                    .ThenInclude(client => client.Address)
+            .Include(a => a.Contract)
+                .ThenInclude(c => c.Client)
+                    .ThenInclude(client => client.Person)
+                        .ThenInclude(person => person.Address)
             .ToListAsync();
     }
 

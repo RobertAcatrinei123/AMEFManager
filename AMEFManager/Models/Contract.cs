@@ -19,4 +19,7 @@ public class Contract
     public Client Client { get; set; } = null!;
     
     public List<Amef> Amefs { get; set; } = new();
+    public List<AdditionalDocument> AdditionalDocuments { get; set; } = new();
+    
+    public string DisplayName => $"Contract {Number} - {Client?.Name ?? "Fara client"}";
 }

@@ -9,6 +9,7 @@ using AMEFManager.Views.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Threading.Tasks;
 
 namespace AMEFManager;
 
@@ -49,6 +50,10 @@ public partial class App : Application
         services.AddScoped<IService<Person>>(x => x.GetRequiredService<PersonService>());
         services.AddScoped<SealingDocumentService>();
         services.AddScoped<IService<SealingDocument>>(x => x.GetRequiredService<SealingDocumentService>());
+        services.AddScoped<C802DocumentService>();
+        services.AddScoped<IService<C802Document>>(x => x.GetRequiredService<C802DocumentService>());
+        services.AddScoped<ReasonService>();
+        services.AddScoped<IService<Reason>>(x => x.GetRequiredService<ReasonService>());
         
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<AmefWindowViewModel>();
@@ -62,11 +67,26 @@ public partial class App : Application
         services.AddTransient<AdditionalDocumentWindowViewModel>();
         services.AddTransient<DeliveryDocumentWindowViewModel>();
         services.AddTransient<SealingDocumentWindowViewModel>();
+        services.AddTransient<ReasonWindowViewModel>();
 
         services.AddSingleton<SettingsService>();
         services.AddSingleton<BackupService>();
         services.AddTransient<SettingsWindowViewModel>();
         services.AddTransient<BackupWindowViewModel>();
+        services.AddTransient<ContractGenerationWindowViewModel>();
+        services.AddTransient<ContractAnnexGenerationWindowViewModel>();
+        services.AddTransient<InstallationDeclarationGenerationWindowViewModel>();
+        services.AddTransient<AuthorizationGenerationWindowViewModel>();
+        services.AddTransient<WarrantyGenerationWindowViewModel>();
+        services.AddTransient<TrainingSheetGenerationWindowViewModel>();
+        services.AddTransient<SealingDocumentGenerationWindowViewModel>();
+        services.AddTransient<DeliveryDocumentGenerationWindowViewModel>();
+        services.AddTransient<C801GenerationWindowViewModel>();
+        services.AddTransient<C802GenerationWindowViewModel>();
+        services.AddTransient<F4102GenerationWindowViewModel>();
+        services.AddTransient<F4103GenerationWindowViewModel>();
+        services.AddTransient<DocumentGenerationService>();
+        services.AddTransient<IDocumentGenerationService, DocumentGenerationService>();
         Services = services.BuildServiceProvider();
         
         using (var scope = Services.CreateScope())

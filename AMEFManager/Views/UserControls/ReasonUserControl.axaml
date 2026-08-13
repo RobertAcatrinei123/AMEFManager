@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.UserControls"
+             xmlns:models="clr-namespace:AMEFManager.Models"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AMEFManager.Views.UserControls.ReasonUserControl"
+             x:DataType="vm:ReasonUserControlViewModel">
+
+    <Panel>
+        <!-- Loading Indicator -->
+        <StackPanel IsVisible="{Binding IsLoading}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12"
+                    Margin="0,20">
+            <ProgressBar IsIndeterminate="True" Width="200" />
+            <TextBlock Text="Se încarcă motivele de refiscalizare..."
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </StackPanel>
+
+        <!-- Main Content -->
+        <StackPanel IsVisible="{Binding !IsLoading}" Spacing="16">
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <!-- Section Header -->
+                    <TextBlock Text="{Binding HeaderTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <!-- Selector -->
+                    <StackPanel Margin="0,0,0,12" MaxWidth="600" HorizontalAlignment="Left">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Content="✕"
+                                    Command="{Binding ClearSelectedReasonCommand}"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Curăță selecția" />
+                            <ComboBox ItemsSource="{Binding FilteredReasons}"
+                                      SelectedItem="{Binding SelectedReason}"
+                                      PlaceholderText="Motiv refiscalizare nou..."
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:Reason">
+                                        <TextBlock Text="{Binding Text}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </DockPanel>
+                    </StackPanel>
+
+                    <!-- Fields -->
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="300" Width="550">
+                            <TextBlock Text="Motiv refiscalizare *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Text}" PlaceholderText="Ex: Defectare memorie fiscală / Schimbare punct de lucru" />
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Panel>
+</UserControl>

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,6 +14,7 @@ namespace AMEFManager.ViewModels.UserControls;
 public partial class ClientUserControlViewModel : ViewModelBase
 {
     private readonly ClientService _clientService;
+    private readonly AddressService _addressService;
     private readonly PersonService _personService;
     private List<Client> _allClients = [];
     private bool _isUpdatingFromSelection;
@@ -25,12 +26,27 @@ public partial class ClientUserControlViewModel : ViewModelBase
     public ClientUserControlViewModel(ClientService clientService, AddressService addressService, PersonService personService)
     {
         _clientService = clientService;
-        AddressUserControlViewModel = new AddressUserControlViewModel(addressService);
+        _addressService = addressService;
+        AddressUserControlViewModel = new AddressUserControlViewModel(addressService)
+        {
+            HeaderTitle = "Adresă Sediu Social Client"
+        };
         _personService = personService;
-        PersonUserControlViewModel = new PersonUserControlViewModel(_personService, addressService);
+        PersonUserControlViewModel = new PersonUserControlViewModel(_personService, addressService)
+        {
+            HeaderTitle = "Date Reprezentant Legal Client"
+        };
+        PersonUserControlViewModel.AddressUserControlViewModel.HeaderTitle = "Adresă Domiciliu Reprezentant";
+        
+        AddressUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
+        PersonUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(PersonUserControlViewModel.SelectedPerson) && !_isUpdatingFromSelection) ApplyFilter(); };
+
         LoadClientsCommand.Execute(null);
         _hasBeenFiltered = false;
     }
+
+    [ObservableProperty]
+    private string _headerTitle = "Date Societate Comercială (Client)";
 
     [ObservableProperty]
     private bool _isLoading;
@@ -50,6 +66,9 @@ public partial class ClientUserControlViewModel : ViewModelBase
     [ObservableProperty]
     private string? _registrationNumber;
 
+    [ObservableProperty]
+    private bool _paysTVA;
+
     [RelayCommand]
     private void ClearSelectedClient()
     {
@@ -63,6 +82,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
             Name = null;
             NationalIdentifier = null;
             RegistrationNumber = null;
+            PaysTVA = false;
             AddressUserControlViewModel.ClearSelectedAddressCommand.Execute(null);
             PersonUserControlViewModel.ClearSelectedPersonCommand.Execute(null);
         }
@@ -90,7 +110,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
             return;
         }
 
-        Debug.Print("Selected client changed");
+        AppLogger.LogDebug($"Selected Client changed: Id={value?.Id}, Name={value?.Name}");
 
         try
         {
@@ -101,6 +121,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
                 Name = null;
                 NationalIdentifier = null;
                 RegistrationNumber = null;
+                PaysTVA = false;
                 AddressUserControlViewModel.ClearSelectedAddressCommand.Execute(null);
                 PersonUserControlViewModel.ClearSelectedPersonCommand.Execute(null);
             }
@@ -109,13 +130,14 @@ public partial class ClientUserControlViewModel : ViewModelBase
                 Name = value.Name;
                 NationalIdentifier = value.NationalIdentifier;
                 RegistrationNumber = value.RegistrationNumber;
+                PaysTVA = value.PaysTVA;
 
                 var matchingAddress = AddressUserControlViewModel.FilteredAddresses
-                    .FirstOrDefault(a => a.Id == value.AddressId);
+                    .FirstOrDefault(a => a.Id == value.AddressId) ?? value.Address;
                 AddressUserControlViewModel.SelectedAddress = matchingAddress;
 
                 var matchingPerson = PersonUserControlViewModel.FilteredPersons
-                    .FirstOrDefault(p => p.Id == value.PersonId);
+                    .FirstOrDefault(p => p.Id == value.PersonId) ?? value.Person;
                 PersonUserControlViewModel.SelectedPerson = matchingPerson;
             }
         }
@@ -128,6 +150,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
     partial void OnNameChanged(string? value) => OnFieldChanged();
     partial void OnNationalIdentifierChanged(string? value) => OnFieldChanged();
     partial void OnRegistrationNumberChanged(string? value) => OnFieldChanged();
+    partial void OnPaysTVAChanged(bool value) => OnFieldChanged();
 
     private void OnFieldChanged()
     {
@@ -145,10 +168,15 @@ public partial class ClientUserControlViewModel : ViewModelBase
         _hasBeenFiltered = true;
         try
         {
-                    var filtered = _allClients.Where(c =>
+            var selectedAddress = AddressUserControlViewModel.SelectedAddress;
+            var selectedPerson = PersonUserControlViewModel.SelectedPerson;
+
+            var filtered = _allClients.Where(c =>
                 StartsWith(c.Name, Name) &&
-                StartsWith(c.NationalIdentifier, NationalIdentifier) &&
-                StartsWith(c.RegistrationNumber, RegistrationNumber) ||
+                (StartsWith(c.NationalIdentifier, NationalIdentifier) || StartsWith(c.GetFormattedCui(), NationalIdentifier)) &&
+                StartsWith(c.RegistrationNumber, RegistrationNumber) &&
+                (selectedAddress == null || c.AddressId == selectedAddress.Id) &&
+                (selectedPerson == null || c.PersonId == selectedPerson.Id) ||
                 c.Equals(SelectedClient)
             ).OrderBy(x => x.Id).ToList();
 
@@ -194,7 +222,8 @@ public partial class ClientUserControlViewModel : ViewModelBase
             {
                 Name = Name!,
                 NationalIdentifier = NationalIdentifier!,
-                RegistrationNumber = RegistrationNumber!
+                RegistrationNumber = RegistrationNumber!,
+                PaysTVA = PaysTVA
             };
         }
 
@@ -204,62 +233,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
     public async Task<Client> SaveClientAsync()
     {
         var address = await AddressUserControlViewModel.SaveAddressAsync();
-
-        var personAddressVm = PersonUserControlViewModel.AddressUserControlViewModel;
-        var personAddress = await personAddressVm.SaveAddressAsync();
-
-        Person savedPerson;
-        if (PersonUserControlViewModel.SelectedPerson is null)
-        {
-            var existing = await _personService.FindByCnp(PersonUserControlViewModel.Cnp!) ?? 
-                           await _personService.FindBySeriesAndNumber(PersonUserControlViewModel.Series!, PersonUserControlViewModel.Number!);
-            if (existing != null)
-            {
-                savedPerson = existing;
-                savedPerson.LastName = PersonUserControlViewModel.LastName!;
-                savedPerson.FirstName = PersonUserControlViewModel.FirstName!;
-                savedPerson.Cnp = PersonUserControlViewModel.Cnp!;
-                savedPerson.Email = PersonUserControlViewModel.Email;
-                savedPerson.Phone = PersonUserControlViewModel.Phone;
-                savedPerson.Series = PersonUserControlViewModel.Series!;
-                savedPerson.Number = PersonUserControlViewModel.Number!;
-                savedPerson.Issuer = PersonUserControlViewModel.Issuer!;
-                if (PersonUserControlViewModel.IssuingDate.HasValue)
-                    savedPerson.IssuingDate = DateOnly.FromDateTime(PersonUserControlViewModel.IssuingDate.Value.DateTime);
-                savedPerson.Role = PersonUserControlViewModel.Role!;
-                savedPerson.Address = personAddress;
-                savedPerson.AddressId = personAddress.Id;
-                await _personService.Update(savedPerson);
-            }
-            else
-            {
-                savedPerson = PersonUserControlViewModel.GetSelectedPerson();
-                savedPerson.Address = personAddress;
-                savedPerson.AddressId = personAddress.Id;
-                await _personService.Add(savedPerson);
-            }
-        }
-        else
-        {
-            savedPerson = PersonUserControlViewModel.SelectedPerson;
-            savedPerson.LastName = PersonUserControlViewModel.LastName!;
-            savedPerson.FirstName = PersonUserControlViewModel.FirstName!;
-            savedPerson.Cnp = PersonUserControlViewModel.Cnp!;
-            savedPerson.Email = PersonUserControlViewModel.Email;
-            savedPerson.Phone = PersonUserControlViewModel.Phone;
-            savedPerson.Series = PersonUserControlViewModel.Series!;
-            savedPerson.Number = PersonUserControlViewModel.Number!;
-            savedPerson.Issuer = PersonUserControlViewModel.Issuer!;
-            if (PersonUserControlViewModel.IssuingDate.HasValue)
-                savedPerson.IssuingDate = DateOnly.FromDateTime(PersonUserControlViewModel.IssuingDate.Value.DateTime);
-            savedPerson.Role = PersonUserControlViewModel.Role!;
-            savedPerson.Address = personAddress;
-            savedPerson.AddressId = personAddress.Id;
-            await _personService.Update(savedPerson);
-        }
-        await _personService.SubmitChanges();
-        await PersonUserControlViewModel.LoadPersonsAsync();
-        PersonUserControlViewModel.SelectedPerson = PersonUserControlViewModel.FilteredPersons.FirstOrDefault(p => p.Id == savedPerson.Id);
+        var savedPerson = await PersonUserControlViewModel.SavePersonAsync();
 
         Client savedClient;
         if (SelectedClient is null)
@@ -272,6 +246,7 @@ public partial class ClientUserControlViewModel : ViewModelBase
                 savedClient.Name = Name!;
                 savedClient.NationalIdentifier = NationalIdentifier!;
                 savedClient.RegistrationNumber = RegistrationNumber!;
+                savedClient.PaysTVA = PaysTVA;
                 savedClient.Address = address;
                 savedClient.AddressId = address.Id;
                 savedClient.Person = savedPerson;
@@ -294,16 +269,51 @@ public partial class ClientUserControlViewModel : ViewModelBase
             savedClient.Name = Name!;
             savedClient.NationalIdentifier = NationalIdentifier!;
             savedClient.RegistrationNumber = RegistrationNumber!;
+            savedClient.PaysTVA = PaysTVA;
             savedClient.Address = address;
             savedClient.AddressId = address.Id;
             savedClient.Person = savedPerson;
             savedClient.PersonId = savedPerson.Id;
             await _clientService.Update(savedClient);
         }
+
         await _clientService.SubmitChanges();
         await LoadClientsAsync();
         SelectedClient = FilteredClients.FirstOrDefault(c => c.Id == savedClient.Id);
-        
+        AppLogger.LogInfo($"Successfully saved Client: Id={savedClient.Id}, Name={savedClient.Name}, NationalIdentifier={savedClient.NationalIdentifier}");
+
         return savedClient;
+    }
+
+    public async Task DeleteClientAsync()
+    {
+        if (SelectedClient is null) return;
+
+        var toDelete = SelectedClient;
+        AppLogger.LogInfo($"Deleting Client: Id={toDelete.Id}, Name={toDelete.Name}, NationalIdentifier={toDelete.NationalIdentifier}");
+
+        var person = toDelete.Person ?? (toDelete.PersonId > 0 ? await _personService.FindById(toDelete.PersonId) : null);
+        var address = toDelete.Address ?? (toDelete.AddressId > 0 ? await _addressService.FindById(toDelete.AddressId) : null);
+        var personAddress = person?.Address ?? (person?.AddressId > 0 ? await _addressService.FindById(person.AddressId) : null);
+
+        await _clientService.Delete(toDelete);
+
+        try
+        {
+            if (person != null) await _personService.Delete(person);
+            if (address != null) await _addressService.Delete(address);
+            if (personAddress != null && (address == null || personAddress.Id != address.Id)) await _addressService.Delete(personAddress);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogWarning($"Cascading delete associated records for Client Id={toDelete.Id} threw: {ex.Message}");
+        }
+
+        await _clientService.SubmitChanges();
+        ClearSelectedClient();
+        await LoadClientsAsync();
+        await AddressUserControlViewModel.LoadAddressesAsync();
+        await PersonUserControlViewModel.LoadPersonsAsync();
+        AppLogger.LogInfo($"Client Id={toDelete.Id} deleted successfully.");
     }
 }

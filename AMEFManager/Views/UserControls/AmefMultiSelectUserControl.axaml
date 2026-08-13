@@ -1,0 +1,152 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.UserControls"
+             xmlns:models="clr-namespace:AMEFManager.Models"
+             xmlns:helpers="clr-namespace:AMEFManager.Helpers"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="AMEFManager.Views.UserControls.AmefMultiSelectUserControl"
+             x:DataType="vm:AmefMultiSelectUserControlViewModel">
+
+    <UserControl.Resources>
+        <helpers:AmefDisplayConverter x:Key="AmefDisplayConverter" />
+    </UserControl.Resources>
+
+    <Panel>
+        <!-- Loading Indicator -->
+        <StackPanel IsVisible="{Binding IsLoading}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12"
+                    Margin="0,20">
+            <ProgressBar IsIndeterminate="True" Width="200" />
+            <TextBlock Text="Se încarcă AMEF-urile..."
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </StackPanel>
+
+        <!-- Main Content -->
+        <StackPanel IsVisible="{Binding !IsLoading}" Spacing="16">
+            <!-- Card 1: Filtrare & Adăugare AMEF -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Filtrare &amp; Adăugare AMEF" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Model" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Model}" PlaceholderText="Caută după model..." />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Seria" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Series}" PlaceholderText="Caută după serie..." />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="NUI" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Nui}" PlaceholderText="Caută după NUI..." />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
+                            <TextBlock Text="Contract" FontWeight="Medium" Margin="0,0,0,4" />
+                            <Grid ColumnDefinitions="*,Auto">
+                                <ComboBox ItemsSource="{Binding AvailableContracts}" 
+                                          SelectedItem="{Binding SelectedContractFilter}" 
+                                          PlaceholderText="Filtrează după contract..." 
+                                          HorizontalAlignment="Stretch"
+                                          Grid.Column="0">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:Contract">
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Content="✕" 
+                                        Command="{Binding ClearContractFilterCommand}" 
+                                        Grid.Column="1"
+                                        Margin="4,0,0,0"
+                                        ToolTip.Tip="Șterge filtrul" />
+                            </Grid>
+                        </StackPanel>
+                    </WrapPanel>
+
+                    <!-- Selector to Add -->
+                    <StackPanel Margin="0,8,0,0" MaxWidth="500" HorizontalAlignment="Left">
+                        <TextBlock Text="Selectează AMEF pentru a-l adăuga în listă:" FontWeight="Medium" Margin="0,0,0,4" />
+                        <ComboBox ItemsSource="{Binding FilteredAmefs}"
+                                  SelectedItem="{Binding AmefToAdd}"
+                                  PlaceholderText="Alege un AMEF..."
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:Amef">
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource AmefDisplayConverter}">
+                                                <Binding Path="Model" />
+                                                <Binding Path="Series" />
+                                                <Binding Path="NUI" />
+                                                <Binding Path="Contract.Client.Name"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Card 2: AMEF-uri Selectate -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="AMEF-uri Selectate" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <TextBlock Text="Niciun aparat AMEF selectat."
+                               IsVisible="{Binding !SelectedAmefs.Count}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               FontStyle="Italic"
+                               Margin="0,4" />
+
+                    <ItemsControl ItemsSource="{Binding SelectedAmefs}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:Amef">
+                                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                        CornerRadius="6" 
+                                        Padding="12,8" 
+                                        Margin="0,0,0,8">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" 
+                                                Content="✕" 
+                                                Command="{Binding $parent[UserControl].((vm:AmefMultiSelectUserControlViewModel)DataContext).RemoveAmefCommand}"
+                                                CommandParameter="{Binding}"
+                                                VerticalAlignment="Center"
+                                                Margin="16,0,0,0"
+                                                ToolTip.Tip="Elimină din selecție" />
+                                        <TextBlock VerticalAlignment="Center" FontWeight="Medium">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource AmefDisplayConverter}">
+                                                    <Binding Path="Model" />
+                                                    <Binding Path="Series" />
+                                                    <Binding Path="NUI" />
+                                                    <Binding Path="Contract.Client.Name" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Panel>
+</UserControl>

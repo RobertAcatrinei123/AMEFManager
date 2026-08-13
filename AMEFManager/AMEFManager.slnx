@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AMEFManager.csproj" />
+  <Project Path="AMEFManager.Tests/AMEFManager.Tests.csproj" />
+</Solution>

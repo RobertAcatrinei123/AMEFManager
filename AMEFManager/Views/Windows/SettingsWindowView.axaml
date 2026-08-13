@@ -3,27 +3,130 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AMEFManager.ViewModels.Windows"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="1200"
              x:Class="AMEFManager.Views.Windows.SettingsWindowView"
              x:DataType="vm:SettingsWindowViewModel">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        
-        <TextBlock Grid.Row="0" Text="Setari Aplicatie" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
-        
-        <StackPanel Grid.Row="1" Spacing="10">
-            <TextBlock Text="Cale Server (Server Path)"/>
-            <Grid ColumnDefinitions="*, Auto">
-                <TextBox Grid.Column="0" Text="{Binding ServerPath}" Margin="0,0,10,0"/>
-                <Button Grid.Column="1" Content="..." Click="BrowseButton_Click"/>
-            </Grid>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" Margin="0,0,0,32" MaxWidth="1000" HorizontalAlignment="Left">
+            
+            <!-- Page Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,8">
+                <TextBlock Text="Configurare Setări &amp; Date Societate" FontSize="24" FontWeight="Bold" />
+            </StackPanel>
+
+            <!-- Status Message Banner (Success) -->
+            <Border Background="#D1FAE5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#065F46" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Error Message Banner (Error) -->
+            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#991B1B" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Group 1: Date Societate (Service / Distribuitor) -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Date Societate (Service / Distribuitor)" FontSize="16" FontWeight="SemiBold"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Nume Societate" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding NumeSocietate}" PlaceholderText="Ex: SERVICE FISCAL SRL"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="CUI / CIF" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Cui}" PlaceholderText="Ex: RO12345678"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Telefon" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Telefon}" PlaceholderText="Ex: 0722123456"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Email" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Email}" PlaceholderText="Ex: office@servicefiscal.ro"/>
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Group 2: Contabilitate -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Contabilitate" FontSize="16" FontWeight="SemiBold"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Nume Contabil" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding DenumireContabil}" PlaceholderText="Ex: Ionescu Maria"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="CNP Contabil" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding CnpContabil}" PlaceholderText="Ex: 2880202123456"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Email Contabil" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EmailContabil}" PlaceholderText="Ex: contabilitate@servicefiscal.ro"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Telefon Contabil" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding TelContabil}" PlaceholderText="Ex: 0733987654"/>
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Group 3: Căi Sistem & Server -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Căi Sistem &amp; Server" FontSize="16" FontWeight="SemiBold"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <StackPanel Spacing="6" MaxWidth="700" HorizontalAlignment="Left">
+                        <TextBlock Text="Cale Server (Server Path)" FontWeight="Medium"/>
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBox Grid.Column="0" Text="{Binding ServerPath}" PlaceholderText="Ex: /Users/nume/Documents/AMEF_Server sau \\server\share" Margin="0,0,8,0"/>
+                            <Button Grid.Column="1" Content="Răsfoiește..." Click="BrowseButton_Click" MinWidth="110" HorizontalContentAlignment="Center"/>
+                        </Grid>
+                        <TextBlock Text="Locația de bază unde se salvează declarațiile ANAF și contractele clienților."
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="12"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Action Command Buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,32">
+                <Button Content="Salvează Setări" 
+                        Command="{Binding SaveCommand}" 
+                        Classes="accent" 
+                        MinWidth="150" 
+                        Padding="20,10" 
+                        FontWeight="SemiBold" 
+                        HorizontalContentAlignment="Center"/>
+                <Button Content="Reîncarcă" 
+                        Command="{Binding ReloadCommand}" 
+                        MinWidth="110" 
+                        Padding="16,10" 
+                        HorizontalContentAlignment="Center"/>
+            </StackPanel>
+
         </StackPanel>
-        
-        <Button Grid.Row="3" Content="Salveaza" Command="{Binding SaveCommand}" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
-    </Grid>
+    </ScrollViewer>
 </UserControl>

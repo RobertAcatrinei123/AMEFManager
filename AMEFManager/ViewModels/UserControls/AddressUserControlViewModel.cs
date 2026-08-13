@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -24,6 +24,9 @@ public partial class AddressUserControlViewModel : ViewModelBase
         LoadAddressesCommand.Execute(null);
         _hasBeenFiltered = false;
     }
+
+    [ObservableProperty]
+    private string _headerTitle = "Date Adresă";
 
     [ObservableProperty]
     private bool _isLoading;
@@ -101,7 +104,7 @@ public partial class AddressUserControlViewModel : ViewModelBase
             return;
         }
         
-        Debug.Print($"Selected address changed");
+        AppLogger.LogDebug($"Selected Address changed: Id={value?.Id}, City={value?.City}, Street={value?.Street}");
         
         try
         {
@@ -254,12 +257,29 @@ public partial class AddressUserControlViewModel : ViewModelBase
             savedAddress.Floor = Floor;
             savedAddress.Apartment = Apartment;
             savedAddress.Other = Other;
-            await _addressService.SubmitChanges();
+            await _addressService.Update(savedAddress);
         }
 
+        await _addressService.SubmitChanges();
         await LoadAddressesAsync();
         SelectedAddress = FilteredAddresses.FirstOrDefault(a => a.Id == savedAddress.Id);
 
         return savedAddress;
+    }
+
+    public async Task DeleteAddressAsync()
+    {
+        if (SelectedAddress is null)
+            return;
+
+        var toDelete = SelectedAddress;
+        AppLogger.LogInfo($"Deleting Address: Id={toDelete.Id}, City={toDelete.City}, Street={toDelete.Street}");
+
+        await _addressService.Delete(toDelete);
+        await _addressService.SubmitChanges();
+
+        ClearSelectedAddress();
+        await LoadAddressesAsync();
+        AppLogger.LogInfo($"Address Id={toDelete.Id} deleted successfully.");
     }
 }

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,6 +14,7 @@ namespace AMEFManager.ViewModels.UserControls;
 public partial class PersonUserControlViewModel : ViewModelBase
 {
     private readonly PersonService _personService;
+    private readonly AddressService _addressService;
     private List<Person> _allPersons = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
@@ -23,10 +24,19 @@ public partial class PersonUserControlViewModel : ViewModelBase
     public PersonUserControlViewModel(PersonService personService, AddressService addressService)
     {
         _personService = personService;
-        AddressUserControlViewModel = new AddressUserControlViewModel(addressService);
+        _addressService = addressService;
+        AddressUserControlViewModel = new AddressUserControlViewModel(addressService)
+        {
+            HeaderTitle = "Adresă Domiciliu Persoană"
+        };
+        AddressUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
+
         LoadPersonsCommand.Execute(null);
         _hasBeenFiltered = false;
     }
+
+    [ObservableProperty]
+    private string _headerTitle = "Date Personale & Contact";
 
     [ObservableProperty]
     private bool _isLoading;
@@ -113,7 +123,7 @@ public partial class PersonUserControlViewModel : ViewModelBase
             return;
         }
 
-        Debug.Print("Selected person changed");
+        AppLogger.LogDebug($"Selected Person changed: Id={value?.Id}, Name={value?.FirstName} {value?.LastName}");
 
         try
         {
@@ -147,7 +157,7 @@ public partial class PersonUserControlViewModel : ViewModelBase
                 Role = value.Role;
 
                 var matchingAddress = AddressUserControlViewModel.FilteredAddresses
-                    .FirstOrDefault(a => a.Id == value.AddressId);
+                    .FirstOrDefault(a => a.Id == value.AddressId) ?? value.Address;
                 AddressUserControlViewModel.SelectedAddress = matchingAddress;
             }
         }
@@ -185,7 +195,9 @@ public partial class PersonUserControlViewModel : ViewModelBase
         _hasBeenFiltered = true;
         try
         {
-                    var filtered = _allPersons.Where(p =>
+            var selectedAddress = AddressUserControlViewModel.SelectedAddress;
+
+            var filtered = _allPersons.Where(p =>
                 StartsWith(p.LastName, LastName) &&
                 StartsWith(p.FirstName, FirstName) &&
                 StartsWith(p.Cnp, Cnp) &&
@@ -194,7 +206,8 @@ public partial class PersonUserControlViewModel : ViewModelBase
                 StartsWith(p.Series, Series) &&
                 StartsWith(p.Number, Number) &&
                 StartsWith(p.Issuer, Issuer) &&
-                StartsWith(p.Role, Role) ||
+                StartsWith(p.Role, Role) &&
+                (selectedAddress == null || p.AddressId == selectedAddress.Id) ||
                 p.Equals(SelectedPerson)
             ).OrderBy(x => x.Id).ToList();
 
@@ -264,5 +277,100 @@ public partial class PersonUserControlViewModel : ViewModelBase
         }
 
         return SelectedPerson;
+    }
+
+    public async Task<Person> SavePersonAsync()
+    {
+        var addressVm = AddressUserControlViewModel;
+        var address = await addressVm.SaveAddressAsync();
+
+        Person savedPerson;
+
+        if (SelectedPerson is null)
+        {
+            var existing = await _personService.FindByCnp(Cnp!) ?? 
+                           await _personService.FindBySeriesAndNumber(Series!, Number!);
+            
+            if (existing != null)
+            {
+                savedPerson = existing;
+                savedPerson.LastName = LastName!;
+                savedPerson.FirstName = FirstName!;
+                savedPerson.Cnp = Cnp!;
+                savedPerson.Email = Email;
+                savedPerson.Phone = Phone;
+                savedPerson.Series = Series!;
+                savedPerson.Number = Number!;
+                savedPerson.Issuer = Issuer!;
+                if (IssuingDate.HasValue)
+                    savedPerson.IssuingDate = DateOnly.FromDateTime(IssuingDate.Value.DateTime);
+                savedPerson.Role = Role!;
+                savedPerson.Address = address;
+                savedPerson.AddressId = address.Id;
+                await _personService.Update(savedPerson);
+            }
+            else
+            {
+                savedPerson = GetSelectedPerson();
+                savedPerson.Address = address;
+                savedPerson.AddressId = address.Id;
+                await _personService.Add(savedPerson);
+            }
+        }
+        else
+        {
+            savedPerson = SelectedPerson;
+            savedPerson.LastName = LastName!;
+            savedPerson.FirstName = FirstName!;
+            savedPerson.Cnp = Cnp!;
+            savedPerson.Email = Email;
+            savedPerson.Phone = Phone;
+            savedPerson.Series = Series!;
+            savedPerson.Number = Number!;
+            savedPerson.Issuer = Issuer!;
+            if (IssuingDate.HasValue)
+                savedPerson.IssuingDate = DateOnly.FromDateTime(IssuingDate.Value.DateTime);
+            savedPerson.Role = Role!;
+            savedPerson.Address = address;
+            savedPerson.AddressId = address.Id;
+            await _personService.Update(savedPerson);
+        }
+
+        await _personService.SubmitChanges();
+        await LoadPersonsAsync();
+
+        SelectedPerson = FilteredPersons.FirstOrDefault(p => p.Id == savedPerson.Id);
+        AppLogger.LogInfo($"Successfully saved Person: Id={savedPerson.Id}, Name={savedPerson.FirstName} {savedPerson.LastName}, CNP={savedPerson.Cnp}");
+        return savedPerson;
+    }
+
+    public async Task DeletePersonAsync()
+    {
+        if (SelectedPerson is null) return;
+
+        var toDelete = SelectedPerson;
+        AppLogger.LogInfo($"Deleting Person: Id={toDelete.Id}, Name={toDelete.FirstName} {toDelete.LastName}");
+
+        var address = toDelete.Address ?? (toDelete.AddressId > 0 ? await _addressService.FindById(toDelete.AddressId) : null);
+
+        await _personService.Delete(toDelete);
+
+        try
+        {
+            if (address != null)
+            {
+                await _addressService.Delete(address);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogWarning($"Cascading delete address for Person Id={toDelete.Id} threw: {ex.Message}");
+        }
+
+        await _personService.SubmitChanges();
+        ClearSelectedPerson();
+        await LoadPersonsAsync();
+        await AddressUserControlViewModel.LoadAddressesAsync();
+        AppLogger.LogInfo($"Person Id={toDelete.Id} deleted successfully.");
     }
 }

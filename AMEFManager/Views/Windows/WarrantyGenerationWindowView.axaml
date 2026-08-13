@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.Windows"
+             xmlns:uc="clr-namespace:AMEFManager.Views.UserControls"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="900"
+             x:Class="AMEFManager.Views.Windows.WarrantyGenerationWindowView"
+             x:DataType="vm:WarrantyGenerationWindowViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" Margin="0,0,0,32" MaxWidth="1000" HorizontalAlignment="Left">
+            
+            <!-- Page Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,8">
+                <TextBlock Text="Generare Certificat de Garanție" FontSize="24" FontWeight="Bold" />
+            </StackPanel>
+
+            <!-- Status / Result Banner (Success) -->
+            <Border Background="#D1FAE5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding GenerationResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding GenerationResult}" Foreground="#065F46" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Error Message Banner (Error) -->
+            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#991B1B" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Card 1: Selectare AMEF -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Selectare AMEF" FontSize="16" FontWeight="SemiBold"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <uc:AmefMultiSelectUserControl DataContext="{Binding AmefMultiSelectUserControlViewModel}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Card 2: Acțiuni Generare -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Acțiuni Generare" FontSize="16" FontWeight="SemiBold"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                        <Button Content="Generează Certificat Garanție" 
+                                Command="{Binding GenerateWarrantyCommand}" 
+                                Classes="accent" 
+                                IsEnabled="{Binding !IsGenerating}" 
+                                MinWidth="180" 
+                                Padding="20,10" 
+                                FontWeight="SemiBold" 
+                                HorizontalContentAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsGenerating}" VerticalAlignment="Center">
+                            <ProgressBar IsIndeterminate="True" Width="120" VerticalAlignment="Center"/>
+                            <TextBlock Text="Se generează..." Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center" FontSize="12"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

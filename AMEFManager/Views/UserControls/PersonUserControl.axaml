@@ -15,120 +15,128 @@
     </UserControl.Resources>
 
     <Panel>
-
+        <!-- Loading Indicator -->
         <StackPanel IsVisible="{Binding IsLoading}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="12">
-            <ProgressBar IsIndeterminate="True"
-                         Width="200" />
-            <TextBlock Text="Se incarca persoanele..."
-                       HorizontalAlignment="Center" />
+                    Spacing="12"
+                    Margin="0,20">
+            <ProgressBar IsIndeterminate="True" Width="200" />
+            <TextBlock Text="Se încarcă persoanele..."
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
         </StackPanel>
 
-        <ScrollViewer IsVisible="{Binding !IsLoading}">
-            <StackPanel>
+        <!-- Main Content -->
+        <StackPanel IsVisible="{Binding !IsLoading}" Spacing="16">
+            <!-- Card 1: Date Personale & Contact -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{Binding HeaderTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
-                <StackPanel Margin="0,0,0,16" MaxWidth="500" HorizontalAlignment="Left">
-                    <TextBlock Text="Selecteaza persoana" Margin="0,0,0,4" />
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right"
-                                Content="✕"
-                                Command="{Binding ClearSelectedPersonCommand}"
-                                Margin="8,0,0,0"
-                                VerticalAlignment="Center" />
-                        <ComboBox ItemsSource="{Binding FilteredPersons}"
-                                  SelectedItem="{Binding SelectedPerson}"
-                                  PlaceholderText="Persoana noua"
-                                  HorizontalAlignment="Stretch">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="models:Person">
-                                    <TextBlock>
-                                        <TextBlock.Text>
-                                            <MultiBinding Converter="{StaticResource PersonDisplayConverter}">
-                                                <Binding Path="LastName" />
-                                                <Binding Path="FirstName" />
-                                                <Binding Path="Cnp" />
-                                                <Binding Path="Series" />
-                                                <Binding Path="Number" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </DockPanel>
+                    <!-- Selector -->
+                    <StackPanel Margin="0,0,0,12" MaxWidth="500" HorizontalAlignment="Left">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Content="✕"
+                                    Command="{Binding ClearSelectedPersonCommand}"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Curăță selecția" />
+                            <ComboBox ItemsSource="{Binding FilteredPersons}"
+                                      SelectedItem="{Binding SelectedPerson}"
+                                      PlaceholderText="Persoană nouă..."
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:Person">
+                                        <TextBlock>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource PersonDisplayConverter}">
+                                                    <Binding Path="LastName" />
+                                                    <Binding Path="FirstName" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </DockPanel>
+                    </StackPanel>
+
+                    <!-- Fields -->
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                            <TextBlock Text="Nume *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding LastName}" PlaceholderText="Ex: Popescu" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                            <TextBlock Text="Prenume *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding FirstName}" PlaceholderText="Ex: Ion" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                            <TextBlock Text="CNP *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Cnp}" PlaceholderText="Ex: 1850101123456" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                            <TextBlock Text="Email" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Email}" PlaceholderText="Ex: ion.popescu@firma.ro" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                            <TextBlock Text="Telefon" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Phone}" PlaceholderText="Ex: 0722123456" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                            <TextBlock Text="Rol *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Role}" PlaceholderText="Ex: Administrator / Tehnician" />
+                        </StackPanel>
+                    </WrapPanel>
                 </StackPanel>
+            </Border>
 
-                <TextBlock Text="Date personale" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+            <!-- Card 2: Act de Identitate -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Act de Identitate" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
-                <WrapPanel Orientation="Horizontal">
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="120" Width="150">
+                            <TextBlock Text="Seria *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Series}" PlaceholderText="Ex: RX" />
+                        </StackPanel>
 
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Nume *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding LastName}" PlaceholderText="Nume" />
-                    </StackPanel>
+                        <StackPanel Margin="0,0,16,12" MinWidth="120" Width="150">
+                            <TextBlock Text="Număr *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Number}" PlaceholderText="Ex: 123456" />
+                        </StackPanel>
 
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Prenume *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding FirstName}" PlaceholderText="Prenume" />
-                    </StackPanel>
+                        <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
+                            <TextBlock Text="Emitent *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Issuer}" PlaceholderText="Ex: SPCLEP Sector 1" />
+                        </StackPanel>
 
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="CNP *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Cnp}" PlaceholderText="CNP" />
-                    </StackPanel>
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Data emiterii *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <DatePicker SelectedDate="{Binding IssuingDate}" />
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
 
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Email" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Email}" PlaceholderText="Email" />
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Telefon" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Phone}" PlaceholderText="Telefon" />
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Rol *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Role}" PlaceholderText="Rol" />
-                    </StackPanel>
-
-                </WrapPanel>
-
-                <TextBlock Text="Carte de identitate" FontWeight="Bold" FontSize="16" Margin="0,8,0,8" />
-
-                <WrapPanel Orientation="Horizontal">
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="120" Width="150">
-                        <TextBlock Text="Seria *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Series}" PlaceholderText="Seria" />
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="120" Width="150">
-                        <TextBlock Text="Numar *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Number}" PlaceholderText="Numar" />
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Emitent *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Issuer}" PlaceholderText="Emitent" />
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Data emiterii *" Margin="0,0,0,4" />
-                        <DatePicker SelectedDate="{Binding IssuingDate}" />
-                    </StackPanel>
-
-                </WrapPanel>
-
-                <TextBlock Text="Adresa" FontWeight="Bold" FontSize="16" Margin="0,8,0,8" />
-
-                <uc:AddressUserControl DataContext="{Binding AddressUserControlViewModel}" Margin="24,0,0,0" />
-
+            <!-- Card 3: Embedded Address UserControl (Indented) -->
+            <StackPanel Margin="16,0,0,0">
+                <uc:AddressUserControl DataContext="{Binding AddressUserControlViewModel}" />
             </StackPanel>
-        </ScrollViewer>
-
+        </StackPanel>
     </Panel>
-
 </UserControl>

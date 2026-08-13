@@ -4,31 +4,51 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AMEFManager.ViewModels.Windows"
              xmlns:uc="clr-namespace:AMEFManager.Views.UserControls"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="1200"
              x:Class="AMEFManager.Views.Windows.PersonWindowView"
              x:DataType="vm:PersonWindowViewModel">
 
-    <DockPanel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" Margin="0,0,0,32" MaxWidth="1100" HorizontalAlignment="Left">
+            
+            <!-- Page Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,8">
+                <TextBlock Text="Administrare Persoane Fizice &amp; Reprezentanți" FontSize="24" FontWeight="Bold" />
+            </StackPanel>
 
-        <StackPanel DockPanel.Dock="Bottom"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,16,0,0">
-            <Button Content="Șterge"
-                    Command="{Binding DeleteCommand}"
-                    Background="#ef4444"
-                    Foreground="White"
-                    HorizontalContentAlignment="Center"
-                    MinWidth="120"
-                    Margin="0,0,16,0" />
-            <Button Content="Salveaza"
-                    Command="{Binding SaveCommand}"
-                    HorizontalContentAlignment="Center"
-                    MinWidth="120" />
+            <!-- Status Message Banner (Success) -->
+            <Border Background="#D1FAE5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#065F46" FontWeight="Medium" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Error Message Banner (Error) -->
+            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#991B1B" FontWeight="Medium" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Embedded UserControl -->
+            <uc:PersonUserControl DataContext="{Binding PersonUserControlViewModel}" />
+
+            <!-- Action Command Buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,32">
+                <Button Content="Salvează" 
+                        Command="{Binding SaveCommand}" 
+                        Classes="accent" 
+                        MinWidth="150" 
+                        Padding="20,10" 
+                        FontWeight="SemiBold" 
+                        HorizontalContentAlignment="Center"/>
+                <Button Content="Șterge" 
+                        Command="{Binding DeleteCommand}" 
+                        Background="#ef4444" 
+                        Foreground="White" 
+                        MinWidth="120" 
+                        Padding="16,10" 
+                        HorizontalContentAlignment="Center"/>
+            </StackPanel>
+
         </StackPanel>
-
-        <uc:PersonUserControl DataContext="{Binding PersonUserControlViewModel}" />
-
-    </DockPanel>
-
+    </ScrollViewer>
 </UserControl>

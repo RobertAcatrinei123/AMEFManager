@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -24,6 +24,9 @@ public partial class ContractTypeUserControlViewModel : ViewModelBase
         LoadContractTypesCommand.Execute(null);
         _hasBeenFiltered = false;
     }
+
+    [ObservableProperty]
+    private string _headerTitle = "Date Tip Contract";
 
     [ObservableProperty]
     private bool _isLoading;
@@ -78,7 +81,7 @@ public partial class ContractTypeUserControlViewModel : ViewModelBase
             return;
         }
 
-        Debug.Print("Selected contract type changed");
+        AppLogger.LogDebug($"Selected ContractType changed: Id={value?.Id}, Name={value?.Name}");
 
         _isUpdatingFromSelection = true;
 
@@ -170,5 +173,54 @@ public partial class ContractTypeUserControlViewModel : ViewModelBase
         }
 
         return SelectedContractType;
+    }
+
+    public async Task<ContractType> SaveContractTypeAsync()
+    {
+        ContractType savedType;
+        if (SelectedContractType is null)
+        {
+            var existing = await _contractTypeService.FindByName(Name!);
+            if (existing != null)
+            {
+                savedType = existing;
+                savedType.Value = Value ?? 0;
+                await _contractTypeService.Update(savedType);
+            }
+            else
+            {
+                savedType = GetSelectedContractType();
+                await _contractTypeService.Add(savedType);
+            }
+        }
+        else
+        {
+            savedType = SelectedContractType;
+            savedType.Name = Name!;
+            savedType.Value = Value ?? 0;
+            await _contractTypeService.Update(savedType);
+        }
+
+        await _contractTypeService.SubmitChanges();
+        await LoadContractTypesAsync();
+        SelectedContractType = FilteredContractTypes.FirstOrDefault(c => c.Id == savedType.Id);
+        
+        return savedType;
+    }
+
+    public async Task DeleteContractTypeAsync()
+    {
+        if (SelectedContractType is null)
+            return;
+
+        var selected = SelectedContractType;
+        AppLogger.LogInfo($"Deleting ContractType: Id={selected.Id}, Name={selected.Name}");
+
+        await _contractTypeService.Delete(selected);
+        await _contractTypeService.SubmitChanges();
+
+        ClearSelectedContractType();
+        await LoadContractTypesAsync();
+        AppLogger.LogInfo($"ContractType Id={selected.Id} deleted successfully.");
     }
 }

@@ -6,6 +6,7 @@ using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using AMEFManager.ViewModels.UserControls;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,32 +14,48 @@ namespace AMEFManager.ViewModels.Windows;
 
 public partial class AdditionalDocumentWindowViewModel : ViewModelBase
 {
-    private readonly AdditionalDocumentService _documentService;
-    private readonly ClientService _clientService;
-    private readonly AddressService _addressService;
-    private readonly PersonService _personService;
-
     public AdditionalDocumentUserControlViewModel DocumentUserControlViewModel { get; }
+    public AdditionalDocumentUserControlViewModel AdditionalDocumentUserControlViewModel => DocumentUserControlViewModel;
+
+    [ObservableProperty] private string? _statusMessage;
+    [ObservableProperty] private string? _errorMessage;
 
     public AdditionalDocumentWindowViewModel()
         : this(App.Services.GetRequiredService<AdditionalDocumentService>(),
+               App.Services.GetRequiredService<ContractService>(),
+               App.Services.GetRequiredService<ContractTypeService>(),
                App.Services.GetRequiredService<ClientService>(),
                App.Services.GetRequiredService<AddressService>(),
                App.Services.GetRequiredService<PersonService>())
     {
     }
 
-    public AdditionalDocumentWindowViewModel(AdditionalDocumentService documentService, ClientService clientService, AddressService addressService, PersonService personService)
+    public AdditionalDocumentWindowViewModel(
+        AdditionalDocumentService documentService,
+        ContractService contractService,
+        ContractTypeService contractTypeService,
+        ClientService clientService,
+        AddressService addressService,
+        PersonService personService)
+        : this(new AdditionalDocumentUserControlViewModel(
+            documentService,
+            contractService,
+            contractTypeService,
+            clientService,
+            addressService,
+            personService))
     {
-        _documentService = documentService;
-        _clientService = clientService;
-        _addressService = addressService;
-        _personService = personService;
-        DocumentUserControlViewModel = new AdditionalDocumentUserControlViewModel(documentService, clientService, addressService, personService);
+    }
+
+    public AdditionalDocumentWindowViewModel(AdditionalDocumentUserControlViewModel userControlViewModel)
+    {
+        DocumentUserControlViewModel = userControlViewModel;
         DocumentUserControlViewModel.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(DocumentUserControlViewModel.SelectedDocument))
             {
+                StatusMessage = null;
+                ErrorMessage = null;
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
@@ -47,46 +64,29 @@ public partial class AdditionalDocumentWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveAsync()
     {
+        StatusMessage = null;
+        ErrorMessage = null;
         try
         {
             var errors = DocumentUserControlViewModel.Validate();
             if (errors.Count > 0)
             {
+                ErrorMessage = string.Join("\n", errors);
                 await MessageBox.ShowWarning(string.Join("\n", errors), "Campuri obligatorii necompletate");
                 return;
             }
 
             DocumentUserControlViewModel.IsLoading = true;
-
-            var clientVm = DocumentUserControlViewModel.ClientUserControlViewModel;
-            var savedClient = await clientVm.SaveClientAsync();
-
-            AdditionalDocument savedDocument;
-            if (DocumentUserControlViewModel.SelectedDocument is null)
-            {
-                savedDocument = DocumentUserControlViewModel.GetSelectedDocument();
-                savedDocument.Client = savedClient;
-                savedDocument.ClientId = savedClient.Id;
-                await _documentService.Add(savedDocument);
-            }
-            else
-            {
-                savedDocument = DocumentUserControlViewModel.SelectedDocument;
-                savedDocument.Number = DocumentUserControlViewModel.Number ?? 0;
-                savedDocument.Date = DateOnly.FromDateTime(DocumentUserControlViewModel.Date!.Value.DateTime);
-                savedDocument.Client = savedClient;
-                savedDocument.ClientId = savedClient.Id;
-            }
-
-            await _documentService.SubmitChanges();
-            await DocumentUserControlViewModel.LoadDocumentsAsync();
-
-            DocumentUserControlViewModel.SelectedDocument =
-                DocumentUserControlViewModel.FilteredDocuments.FirstOrDefault(d => d.Id == savedDocument.Id);
+            var saved = await DocumentUserControlViewModel.SaveAdditionalDocumentAsync();
+            StatusMessage = "Salvare realizată cu succes.";
+            ErrorMessage = null;
+            AppLogger.LogInfo($"Successfully saved AdditionalDocument: Id={saved.Id}, Number={saved.Number}, Date={saved.Date}");
         }
         catch (Exception e)
         {
-            System.Diagnostics.Debug.WriteLine($"[ERROR] Save failed in AdditionalDocumentWindowViewModel.cs: {e}");
+            AppLogger.LogError($"Save failed in AdditionalDocumentWindowViewModel: {e.Message}", e);
+            StatusMessage = null;
+            ErrorMessage = $"A apărut o eroare la salvare: {e.Message}";
             var msg = e.Message;
             if (e.InnerException != null) msg += "\nInner: " + e.InnerException.Message;
             await MessageBox.ShowError($"A aparut o eroare la salvare:\n{msg}");
@@ -102,13 +102,30 @@ public partial class AdditionalDocumentWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanDelete))]
     private async Task DeleteAsync()
     {
-        var selected = DocumentUserControlViewModel.SelectedDocument;
-        if (selected == null) return;
-        
-        await _documentService.Delete(selected);
-        
-        await _documentService.SubmitChanges();
-        DocumentUserControlViewModel.ClearSelectedDocumentCommand.Execute(null);
-        await DocumentUserControlViewModel.LoadDocumentsAsync();
+        if (DocumentUserControlViewModel.SelectedDocument == null) return;
+
+        StatusMessage = null;
+        ErrorMessage = null;
+        try
+        {
+            DocumentUserControlViewModel.IsLoading = true;
+            await DocumentUserControlViewModel.DeleteAdditionalDocumentAsync();
+            StatusMessage = "Înregistrarea a fost ștearsă cu succes.";
+            ErrorMessage = null;
+            AppLogger.LogInfo("AdditionalDocument deleted successfully.");
+        }
+        catch (Exception e)
+        {
+            AppLogger.LogError($"Delete failed in AdditionalDocumentWindowViewModel: {e.Message}", e);
+            StatusMessage = null;
+            ErrorMessage = $"A apărut o eroare la ștergere: {e.Message}";
+            var msg = e.Message;
+            if (e.InnerException != null) msg += "\nInner: " + e.InnerException.Message;
+            await MessageBox.ShowError($"A aparut o eroare la stergere:\n{msg}");
+        }
+        finally
+        {
+            DocumentUserControlViewModel.IsLoading = false;
+        }
     }
 }

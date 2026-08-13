@@ -8,6 +8,6 @@ public class AdditionalDocument
     public int Number { get; set; }
     public required DateOnly Date { get; set; }
     
-    public int ClientId { get; set; }
-    public Client Client { get; set; } = null!;
+    public int ContractId { get; set; }
+    public Contract Contract { get; set; } = null!;
 }

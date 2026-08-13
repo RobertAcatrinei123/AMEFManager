@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -34,7 +34,10 @@ public partial class SealingDocumentUserControlViewModel : ViewModelBase
         _sealingDocumentService = sealingDocumentService;
         
         AmefUserControlViewModel = new AmefUserControlViewModel(
-            amefService, billService, addressService, authorizationService, contractService, contractTypeService, clientService, personService);
+            amefService, billService, addressService, authorizationService, contractService, contractTypeService, clientService, personService)
+        {
+            HeaderTitle = "AMEF Sigilat"
+        };
 
         AmefUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AmefUserControlViewModel.SelectedAmef) && !_isUpdatingFromSelection) ApplyFilter(); };
         AmefUserControlViewModel.ContractUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
@@ -44,6 +47,7 @@ public partial class SealingDocumentUserControlViewModel : ViewModelBase
         _hasBeenFiltered = false;
     }
 
+    [ObservableProperty] private string _headerTitle = "Date Proces Verbal de Sigilare";
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private ObservableCollection<SealingDocument> _filteredSealingDocuments = [];
     [ObservableProperty] private SealingDocument? _selectedSealingDocument;
@@ -90,7 +94,7 @@ public partial class SealingDocumentUserControlViewModel : ViewModelBase
             return;
         }
 
-        Debug.Print("Selected sealing document changed");
+        AppLogger.LogDebug($"Selected SealingDocument changed: Id={value?.Id}, Number={value?.Number}");
         
         try
         {
@@ -142,7 +146,7 @@ public partial class SealingDocumentUserControlViewModel : ViewModelBase
                 (selectedContract == null || s.Amef?.ContractId == selectedContract.Id) &&
                 (selectedClient == null || s.Amef?.Contract?.ClientId == selectedClient.Id) ||
                 s.Equals(SelectedSealingDocument)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderBy(x => x.Number).ToList();
 
             FilteredSealingDocuments = new ObservableCollection<SealingDocument>(filtered);
         }
@@ -175,5 +179,61 @@ public partial class SealingDocumentUserControlViewModel : ViewModelBase
             };
         }
         return SelectedSealingDocument;
+    }
+
+    public async Task<SealingDocument> SaveSealingDocumentAsync()
+    {
+        var savedAmef = await AmefUserControlViewModel.SaveAmefAsync();
+
+        SealingDocument savedSealingDocument;
+        if (SelectedSealingDocument is null)
+        {
+            var existing = await _sealingDocumentService.FindByNumber(Number ?? 0);
+            if (existing != null)
+            {
+                savedSealingDocument = existing;
+                savedSealingDocument.Date = DateOnly.FromDateTime(Date!.Value.DateTime);
+                savedSealingDocument.Amef = savedAmef;
+                savedSealingDocument.AmefId = savedAmef.Id;
+                await _sealingDocumentService.Update(savedSealingDocument);
+            }
+            else
+            {
+                savedSealingDocument = GetSelectedSealingDocument();
+                savedSealingDocument.Amef = savedAmef;
+                savedSealingDocument.AmefId = savedAmef.Id;
+                await _sealingDocumentService.Add(savedSealingDocument);
+            }
+        }
+        else
+        {
+            savedSealingDocument = SelectedSealingDocument;
+            savedSealingDocument.Number = Number ?? 0;
+            savedSealingDocument.Date = DateOnly.FromDateTime(Date!.Value.DateTime);
+            savedSealingDocument.Amef = savedAmef;
+            savedSealingDocument.AmefId = savedAmef.Id;
+            await _sealingDocumentService.Update(savedSealingDocument);
+        }
+
+        await _sealingDocumentService.SubmitChanges();
+        await LoadSealingDocumentsAsync();
+        SelectedSealingDocument = FilteredSealingDocuments.FirstOrDefault(s => s.Id == savedSealingDocument.Id);
+        AppLogger.LogInfo($"Successfully saved SealingDocument: Id={savedSealingDocument.Id}, Number={savedSealingDocument.Number}, Date={savedSealingDocument.Date}");
+
+        return savedSealingDocument;
+    }
+
+    public async Task DeleteSealingDocumentAsync()
+    {
+        if (SelectedSealingDocument is null) return;
+
+        var toDelete = SelectedSealingDocument;
+        AppLogger.LogInfo($"Deleting SealingDocument: Id={toDelete.Id}, Number={toDelete.Number}");
+
+        await _sealingDocumentService.Delete(toDelete);
+        await _sealingDocumentService.SubmitChanges();
+        ClearSelectedSealingDocument();
+        await LoadSealingDocumentsAsync();
+        AppLogger.LogInfo($"SealingDocument Id={toDelete.Id} deleted successfully.");
     }
 }

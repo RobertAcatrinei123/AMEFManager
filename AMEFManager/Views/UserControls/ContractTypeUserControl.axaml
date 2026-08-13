@@ -14,63 +14,71 @@
     </UserControl.Resources>
 
     <Panel>
-
+        <!-- Loading Indicator -->
         <StackPanel IsVisible="{Binding IsLoading}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="12">
+                    Spacing="12"
+                    Margin="0,20">
             <ProgressBar IsIndeterminate="True" Width="200" />
-            <TextBlock Text="Se incarca tipurile de contract..." HorizontalAlignment="Center" />
+            <TextBlock Text="Se încarcă tipurile de contract..."
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
         </StackPanel>
 
-        <ScrollViewer IsVisible="{Binding !IsLoading}">
-            <StackPanel>
+        <!-- Main Content -->
+        <StackPanel IsVisible="{Binding !IsLoading}" Spacing="16">
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <!-- Section Header -->
+                    <TextBlock Text="{Binding HeaderTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
-                <StackPanel Margin="0,0,0,16" MaxWidth="500" HorizontalAlignment="Left">
-                    <TextBlock Text="Selecteaza tipul de contract" Margin="0,0,0,4" />
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right"
-                                Content="✕"
-                                Command="{Binding ClearSelectedContractTypeCommand}"
-                                Margin="8,0,0,0"
-                                VerticalAlignment="Center" />
-                        <ComboBox ItemsSource="{Binding FilteredContractTypes}"
-                                  SelectedItem="{Binding SelectedContractType}"
-                                  PlaceholderText="Tip contract nou"
-                                  HorizontalAlignment="Stretch">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="models:ContractType">
-                                    <TextBlock>
-                                        <TextBlock.Text>
-                                            <MultiBinding Converter="{StaticResource ContractTypeDisplayConverter}">
-                                                <Binding Path="Name" />
-                                                <Binding Path="Value" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </DockPanel>
+                    <!-- Selector -->
+                    <StackPanel Margin="0,0,0,12" MaxWidth="500" HorizontalAlignment="Left">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Content="✕"
+                                    Command="{Binding ClearSelectedContractTypeCommand}"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Curăță selecția" />
+                            <ComboBox ItemsSource="{Binding FilteredContractTypes}"
+                                      SelectedItem="{Binding SelectedContractType}"
+                                      PlaceholderText="Tip contract nou..."
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ContractType">
+                                        <TextBlock>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource ContractTypeDisplayConverter}">
+                                                    <Binding Path="Name" />
+                                                    <Binding Path="Value" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </DockPanel>
+                    </StackPanel>
+
+                    <!-- Fields -->
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
+                            <TextBlock Text="Nume *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding Name}" PlaceholderText="Ex: Abonament lunar complet" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Valoare (RON) *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <NumericUpDown Value="{Binding Value}" Minimum="0" FormatString="0" />
+                        </StackPanel>
+                    </WrapPanel>
                 </StackPanel>
-
-                <TextBlock Text="Date tip contract" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
-
-                <WrapPanel Orientation="Horizontal">
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
-                        <TextBlock Text="Nume *" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding Name}" PlaceholderText="Nume tip contract" />
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
-                        <TextBlock Text="Valoare *" Margin="0,0,0,4" />
-                        <NumericUpDown Value="{Binding Value}" Minimum="0" FormatString="0" />
-                    </StackPanel>
-
-                </WrapPanel>
-
-            </StackPanel>
-        </ScrollViewer>
+            </Border>
+        </StackPanel>
     </Panel>
 </UserControl>

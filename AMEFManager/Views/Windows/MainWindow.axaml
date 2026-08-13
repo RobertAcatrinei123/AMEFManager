@@ -24,6 +24,21 @@
                                 <MenuItem Header="PV predare" Command="{Binding NavigateCommand}" CommandParameter="DeliveryDocuments"></MenuItem>
                                 <MenuItem Header="Persoane" Command="{Binding NavigateCommand}" CommandParameter="People"></MenuItem>
                                 <MenuItem Header="PV sigilare" Command="{Binding NavigateCommand}" CommandParameter="SealingDocuments"></MenuItem>
+                                <MenuItem Header="Motive refiscalizare" Command="{Binding NavigateCommand}" CommandParameter="Reasons"></MenuItem>
+                        </MenuItem>
+                        <MenuItem Header="Generare">
+                                <MenuItem Header="Contracte" Command="{Binding NavigateCommand}" CommandParameter="ContractGeneration" />
+                                <MenuItem Header="Anexe contracte" Command="{Binding NavigateCommand}" CommandParameter="ContractAnnexGeneration" />
+                                <MenuItem Header="Declaratii de instalare (DI)" Command="{Binding NavigateCommand}" CommandParameter="InstallationDeclarationGeneration" />
+                                <MenuItem Header="Autorizatie" Command="{Binding NavigateCommand}" CommandParameter="AuthorizationGeneration" />
+                                <MenuItem Header="Garantie" Command="{Binding NavigateCommand}" CommandParameter="WarrantyGeneration" />
+                                <MenuItem Header="Fisa instruire" Command="{Binding NavigateCommand}" CommandParameter="TrainingSheetGeneration" />
+                                <MenuItem Header="PV sigilare" Command="{Binding NavigateCommand}" CommandParameter="SealingDocumentGeneration" />
+                                <MenuItem Header="PV predare" Command="{Binding NavigateCommand}" CommandParameter="DeliveryDocumentGeneration" />
+                                <MenuItem Header="C801" Command="{Binding NavigateCommand}" CommandParameter="C801"></MenuItem>
+                                <MenuItem Header="C802" Command="{Binding NavigateCommand}" CommandParameter="C802"></MenuItem>
+                                <MenuItem Header="F4102" Command="{Binding NavigateCommand}" CommandParameter="F4102"></MenuItem>
+                                <MenuItem Header="F4103" Command="{Binding NavigateCommand}" CommandParameter="F4103"></MenuItem>
                         </MenuItem>
                         <MenuItem Header="Utilitare">
                                 <MenuItem Header="Setari" Command="{Binding NavigateCommand}" CommandParameter="Settings"></MenuItem>

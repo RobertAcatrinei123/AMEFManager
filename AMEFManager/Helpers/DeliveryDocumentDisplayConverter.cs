@@ -12,8 +12,8 @@ public class DeliveryDocumentDisplayConverter : IValueConverter
         if (value is DeliveryDocument doc)
         {
             var dateStr = doc.Date.ToString("dd.MM.yyyy");
-            var modelStr = doc.Amef?.Model ?? string.Empty;
-            return $"Nr. {doc.Number} / {dateStr} - {modelStr}";
+            var seriesStr = doc.Amef?.Series ?? string.Empty;
+            return $"Nr. {doc.Number} / {dateStr} - {seriesStr}";
         }
         return value;
     }

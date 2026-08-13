@@ -4,3 +4,8 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+debug_log.txt
+.agents
+*.md
+*.pdf
+AMEFManager.Tests

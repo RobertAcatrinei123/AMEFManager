@@ -12,9 +12,11 @@ public class AmefDisplayConverter : IMultiValueConverter
         var model = values.Count > 0 ? values[0] as string : null;
         var series = values.Count > 1 ? values[1] as string : null;
         var nui = values.Count > 2 ? values[2] as string : null;
+        var clientName = values.Count > 3 ? values[3] as string : null;
 
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(model)) parts.Add(model);
+        if (!string.IsNullOrWhiteSpace(clientName)) parts.Add(clientName);
         if (!string.IsNullOrWhiteSpace(series)) parts.Add(series);
         
         var main = string.Join(" - ", parts);

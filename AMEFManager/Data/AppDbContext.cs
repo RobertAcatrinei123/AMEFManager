@@ -18,24 +18,50 @@ public class AppDbContext : DbContext
     public DbSet<DeliveryDocument> DeliveryDocuments { get; set; }
     public DbSet<Person> Persons { get; set; }
     public DbSet<SealingDocument> SealingDocuments { get; set; }
+    public DbSet<C802Document> C802Documents { get; set; }
+    public DbSet<Reason> Reasons { get; set; }
+
+    public AppDbContext()
+    {
+    }
+
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var path = Path.Combine(folder, "AMEFManager");
+        if (!optionsBuilder.IsConfigured)
+        {
+            var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var path = Path.Combine(folder, "AMEFManager");
+            
+            Directory.CreateDirectory(path);
         
-        Directory.CreateDirectory(path);
-    
-        var dbPath = Path.Combine(path, "storage.sqlite");
-        optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            var dbPath = Path.Combine(path, "storage.sqlite");
+            optionsBuilder.UseSqlite($"Data Source={dbPath}");
+        }
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+
+        configurationBuilder.Properties<DateOnly>()
+            .HaveConversion<DateOnlyConverter>();
+
+        configurationBuilder.Properties<DateOnly?>()
+            .HaveConversion<NullableDateOnlyConverter>();
+
+        configurationBuilder.Properties<DateTime>()
+            .HaveConversion<DateTimeConverter>();
+
+        configurationBuilder.Properties<DateTime?>()
+            .HaveConversion<NullableDateTimeConverter>();
     }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Amef>()
-            .HasIndex(a => a.NUI)
-            .IsUnique(); 
-
         modelBuilder.Entity<Amef>()
             .HasIndex(a => a.Series)
             .IsUnique(); 
@@ -48,24 +74,12 @@ public class AppDbContext : DbContext
             .HasIndex(a => a.NationalIdentifier)
             .IsUnique();
         
-        modelBuilder.Entity<Client>()
-            .HasIndex(a => a.RegistrationNumber)
-            .IsUnique();
-        
         modelBuilder.Entity<Contract>()
             .HasIndex(a => a.Number)
             .IsUnique();
         
         modelBuilder.Entity<DeliveryDocument>()
             .HasIndex(a => a.Number)
-            .IsUnique();
-        
-        modelBuilder.Entity<Person>()
-            .HasIndex(a => a.Cnp)
-            .IsUnique();    
-        
-        modelBuilder.Entity<Person>()
-            .HasIndex(a => new {a.Series, a.Number})
             .IsUnique();
         
         modelBuilder.Entity<SealingDocument>()

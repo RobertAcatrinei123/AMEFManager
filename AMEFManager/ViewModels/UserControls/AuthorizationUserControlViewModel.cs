@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -26,6 +26,9 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    private string _headerTitle = "Date Autorizație Distribuitor";
+
+    [ObservableProperty]
     private bool _isLoading;
 
     [ObservableProperty]
@@ -43,6 +46,15 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
     [ObservableProperty]
     private string? _model;
 
+    [ObservableProperty]
+    private string? _brand;
+
+    [ObservableProperty]
+    private string? _deviceType;
+
+    [ObservableProperty]
+    private string? _configuration;
+
     [RelayCommand]
     private void ClearSelectedAuthorization()
     {
@@ -56,6 +68,9 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
             Number = null;
             Date = null;
             Model = null;
+            Brand = null;
+            DeviceType = null;
+            Configuration = null;
         }
         finally
         {
@@ -81,7 +96,7 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
             return;
         }
 
-        Debug.Print("Selected authorization changed");
+        AppLogger.LogDebug($"Selected Authorization changed: Id={value?.Id}, Number={value?.Number}, Model={value?.Model}");
 
         try
         {
@@ -92,12 +107,18 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
                 Number = null;
                 Date = null;
                 Model = null;
+                Brand = null;
+                DeviceType = null;
+                Configuration = null;
             }
             else
             {
                 Number = value.Number;
                 Date = new DateTimeOffset(value.Date.ToDateTime(TimeOnly.MinValue));
                 Model = value.Model;
+                Brand = value.Brand;
+                DeviceType = value.DeviceType;
+                Configuration = value.Configuration;
             }
         }
         finally
@@ -107,6 +128,9 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
     }
 
     partial void OnModelChanged(string? value) => OnFieldChanged();
+    partial void OnBrandChanged(string? value) => OnFieldChanged();
+    partial void OnDeviceTypeChanged(string? value) => OnFieldChanged();
+    partial void OnConfigurationChanged(string? value) => OnFieldChanged();
 
     partial void OnNumberChanged(int? value) => OnFieldChanged();
     partial void OnDateChanged(DateTimeOffset? value) => OnFieldChanged();
@@ -127,11 +151,14 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
         _hasBeenFiltered = true;
         try
         {
-                    var filtered = _allAuthorizations.Where(a =>
+            var filtered = _allAuthorizations.Where(a =>
                 (Number == null || a.Number == Number) &&
-                StartsWith(a.Model, Model) ||
+                StartsWith(a.Model, Model) &&
+                StartsWith(a.Brand, Brand) &&
+                StartsWith(a.DeviceType, DeviceType) &&
+                StartsWith(a.Configuration, Configuration) ||
                 a.Equals(SelectedAuthorization)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderBy(x => x.Number).ToList();
 
             FilteredAuthorizations = new ObservableCollection<Authorization>(filtered);
         }
@@ -162,6 +189,12 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
             errors.Add("Data autorizatiei este obligatorie.");
         if (string.IsNullOrWhiteSpace(Model))
             errors.Add("Modelul este obligatoriu.");
+        if (string.IsNullOrWhiteSpace(Brand))
+            errors.Add("Brandul este obligatoriu.");
+        if (string.IsNullOrWhiteSpace(DeviceType))
+            errors.Add("Tipul aparatului este obligatoriu.");
+        if (string.IsNullOrWhiteSpace(Configuration))
+            errors.Add("Configuratia este obligatorie.");
 
         return errors;
     }
@@ -174,10 +207,59 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
             {
                 Number = Number ?? 0,
                 Date = DateOnly.FromDateTime(Date!.Value.DateTime),
-                Model = Model!
+                Model = Model ?? string.Empty,
+                Brand = Brand ?? string.Empty,
+                DeviceType = DeviceType ?? string.Empty,
+                Configuration = Configuration ?? string.Empty
             };
         }
 
         return SelectedAuthorization;
+    }
+
+    public async Task<Authorization> SaveAuthorizationAsync()
+    {
+        Authorization savedAuthorization;
+
+        if (SelectedAuthorization is null)
+        {
+            savedAuthorization = GetSelectedAuthorization();
+            await _authorizationService.Add(savedAuthorization);
+        }
+        else
+        {
+            savedAuthorization = SelectedAuthorization;
+            savedAuthorization.Number = Number ?? 0;
+            if (Date.HasValue)
+                savedAuthorization.Date = DateOnly.FromDateTime(Date.Value.DateTime);
+            savedAuthorization.Model = Model!;
+            savedAuthorization.Brand = Brand!;
+            savedAuthorization.DeviceType = DeviceType!;
+            savedAuthorization.Configuration = Configuration!;
+            await _authorizationService.Update(savedAuthorization);
+        }
+
+        await _authorizationService.SubmitChanges();
+        await LoadAuthorizationsAsync();
+        SelectedAuthorization = FilteredAuthorizations.FirstOrDefault(a => a.Id == savedAuthorization.Id);
+        AppLogger.LogInfo($"Successfully saved Authorization: Id={savedAuthorization.Id}, Number={savedAuthorization.Number}, Model={savedAuthorization.Model}");
+
+        return savedAuthorization;
+    }
+
+    public async Task DeleteAuthorizationAsync()
+    {
+        if (SelectedAuthorization is null)
+            return;
+
+        var toDelete = SelectedAuthorization;
+        AppLogger.LogInfo($"Deleting Authorization: Id={toDelete.Id}, Number={toDelete.Number}, Model={toDelete.Model}");
+
+        await _authorizationService.Delete(toDelete);
+        await _authorizationService.SubmitChanges();
+
+        ClearSelectedAuthorization();
+        await LoadAuthorizationsAsync();
+        AppLogger.LogInfo($"Authorization Id={toDelete.Id} deleted successfully.");
     }
 }

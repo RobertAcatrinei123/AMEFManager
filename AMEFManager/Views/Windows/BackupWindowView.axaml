@@ -3,29 +3,122 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AMEFManager.ViewModels.Windows"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="900"
              x:Class="AMEFManager.Views.Windows.BackupWindowView"
              x:DataType="vm:BackupWindowViewModel">
-    
-    <StackPanel Spacing="10" Margin="20">
-        <TextBlock Text="Setari Backup" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
-        
-        <TextBlock Text="Numar de zile intre backup-uri (0 pentru dezactivare):"/>
-        <NumericUpDown Value="{Binding BackupIntervalDays}" Minimum="0" Maximum="365" Width="200" HorizontalAlignment="Left"/>
-        
-        <TextBlock Text="Numar de backup-uri de pastrat (0 pentru dezactivare):"/>
-        <NumericUpDown Value="{Binding BackupsToKeep}" Minimum="0" Maximum="100" Width="200" HorizontalAlignment="Left"/>
-        
-        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,20">
-            <Button Content="Salveaza Setari" Command="{Binding SaveCommand}" HorizontalContentAlignment="Center"/>
-            <Button Content="Creaza Backup Acum" Command="{Binding CreateBackupNowCommand}" HorizontalContentAlignment="Center"/>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" Margin="0,0,0,32" MaxWidth="1000" HorizontalAlignment="Left">
+            
+            <!-- Page Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,8">
+                <TextBlock Text="Administrare &amp; Configurare Backup Bază de Date" FontSize="24" FontWeight="Bold" />
+            </StackPanel>
+
+            <!-- Status Message Banner (Success) -->
+            <Border Background="#D1FAE5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#065F46" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Error Message Banner (Error) -->
+            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#991B1B" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Card 1: Configurare Backup Automat -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Configurare Backup Automat" FontSize="16" FontWeight="SemiBold"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <StackPanel Spacing="4" Margin="0,0,0,12" MaxWidth="500" HorizontalAlignment="Left">
+                        <TextBlock Text="Frecvență Backup (zile)" FontWeight="Medium"/>
+                        <NumericUpDown Value="{Binding BackupIntervalDays}" Minimum="0" Maximum="365" FormatString="0" Width="200" HorizontalAlignment="Left"/>
+                        <TextBlock Text="Frecvența realizării backup-ului la pornire (în zile). Valoarea 0 dezactivează backup-ul automat."
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="12" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4" Margin="0,0,0,12" MaxWidth="500" HorizontalAlignment="Left">
+                        <TextBlock Text="Copii de Siguranță Păstrate" FontWeight="Medium"/>
+                        <NumericUpDown Value="{Binding BackupsToKeep}" Minimum="0" Maximum="100" FormatString="0" Width="200" HorizontalAlignment="Left"/>
+                        <TextBlock Text="Numărul maxim de copii de siguranță păstrate în folderul Backups."
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="12" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding LastBackupDateFormatted}" 
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                               FontWeight="Medium"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                        <Button Content="Salvează Setări" 
+                                Command="{Binding SaveCommand}" 
+                                Classes="accent" 
+                                MinWidth="150" 
+                                Padding="20,10" 
+                                FontWeight="SemiBold" 
+                                HorizontalContentAlignment="Center"/>
+                        <Button Content="Creează Backup Acum" 
+                                Command="{Binding CreateBackupNowCommand}" 
+                                MinWidth="170" 
+                                Padding="16,10" 
+                                HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Card 2: Restaurare Bază de Date din Copie de Siguranță -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Restaurare Bază de Date din Copie de Siguranță" FontSize="16" FontWeight="SemiBold"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <StackPanel Spacing="6" Margin="0,0,0,12">
+                        <TextBlock Text="Selectați o copie de siguranță:" FontWeight="Medium"/>
+                        <Grid ColumnDefinitions="*, Auto" MaxWidth="600" HorizontalAlignment="Left">
+                            <Grid Grid.Column="0" ColumnDefinitions="*, Auto" Margin="0,0,8,0">
+                                <ComboBox Grid.Column="0" 
+                                          ItemsSource="{Binding AvailableBackups}" 
+                                          SelectedItem="{Binding SelectedBackup}" 
+                                          PlaceholderText="Selectați un fișier de backup..."
+                                          HorizontalAlignment="Stretch"
+                                          Width="360"/>
+                                <Button Grid.Column="1" 
+                                        Content="✕" 
+                                        Command="{Binding ClearSelectedBackupCommand}"
+                                        IsVisible="{Binding SelectedBackup, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                        Padding="8,4"
+                                        Margin="4,0,0,0"
+                                        ToolTip.Tip="Deselectează"/>
+                            </Grid>
+                            <Button Grid.Column="1" 
+                                    Content="Reîmprospătează" 
+                                    Command="{Binding RefreshBackupsCommand}" 
+                                    MinWidth="130" 
+                                    HorizontalContentAlignment="Center"/>
+                        </Grid>
+                        <TextBlock Text="{Binding AvailableBackupsCountMessage}" 
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                                   FontSize="12"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                        <Button Content="Restaurează Baza de Date" 
+                                Command="{Binding RestoreCommand}" 
+                                Classes="accent" 
+                                MinWidth="200" 
+                                Padding="20,10" 
+                                FontWeight="SemiBold" 
+                                HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
         </StackPanel>
-        
-        <TextBlock Text="Restaurare Backup" FontSize="20" FontWeight="Bold" Margin="0,20,0,10"/>
-        
-        <TextBlock Text="Selectati un backup existent:"/>
-        <ComboBox ItemsSource="{Binding AvailableBackups}" SelectedItem="{Binding SelectedBackup}" Width="300" HorizontalAlignment="Left"/>
-        
-        <Button Content="Restaureaza" Command="{Binding RestoreCommand}" Background="#ef4444" Foreground="White" Width="150" HorizontalContentAlignment="Center" Margin="0,10,0,0"/>
-    </StackPanel>
+    </ScrollViewer>
 </UserControl>

@@ -10,4 +10,9 @@ public class ContractTypeService : AbstractService<ContractType>
     public ContractTypeService(AppDbContext context) : base(context)
     {
     }
+
+    public async Task<ContractType?> FindByName(string name)
+    {
+        return await _entities.FirstOrDefaultAsync(c => c.Name == name);
+    }
 }

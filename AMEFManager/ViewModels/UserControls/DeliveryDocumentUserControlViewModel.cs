@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AMEFManager.Helpers;
 using AMEFManager.Models;
 using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -34,7 +34,10 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
         _deliveryDocumentService = deliveryDocumentService;
 
         AmefUserControlViewModel = new AmefUserControlViewModel(
-            amefService, billService, addressService, authorizationService, contractService, contractTypeService, clientService, personService);
+            amefService, billService, addressService, authorizationService, contractService, contractTypeService, clientService, personService)
+        {
+            HeaderTitle = "AMEF Predat"
+        };
 
         AmefUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AmefUserControlViewModel.SelectedAmef) && !_isUpdatingFromSelection) ApplyFilter(); };
         AmefUserControlViewModel.ContractUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
@@ -44,6 +47,7 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
         _hasBeenFiltered = false;
     }
 
+    [ObservableProperty] private string _headerTitle = "Date Proces Verbal de Predare-Primire";
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private ObservableCollection<DeliveryDocument> _filteredDeliveryDocuments = [];
     [ObservableProperty] private DeliveryDocument? _selectedDeliveryDocument;
@@ -91,7 +95,7 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
             return;
         }
 
-        Debug.Print("Selected delivery document changed");
+        AppLogger.LogDebug($"Selected DeliveryDocument changed: Id={value?.Id}, Number={value?.Number}");
         _isUpdatingFromSelection = true;
 
         try
@@ -142,7 +146,7 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
                 (selectedContract == null || d.Amef?.ContractId == selectedContract.Id) &&
                 (selectedClient == null || d.Amef?.Contract?.ClientId == selectedClient.Id) ||
                 d.Equals(SelectedDeliveryDocument)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderBy(x => x.Number).ToList();
 
             FilteredDeliveryDocuments = new ObservableCollection<DeliveryDocument>(filtered);
         }
@@ -175,5 +179,61 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
             };
         }
         return SelectedDeliveryDocument;
+    }
+
+    public async Task<DeliveryDocument> SaveDeliveryDocumentAsync()
+    {
+        var savedAmef = await AmefUserControlViewModel.SaveAmefAsync();
+
+        DeliveryDocument savedDeliveryDocument;
+        if (SelectedDeliveryDocument is null)
+        {
+            var existing = await _deliveryDocumentService.FindByNumber(Number ?? 0);
+            if (existing != null)
+            {
+                savedDeliveryDocument = existing;
+                savedDeliveryDocument.Date = DateOnly.FromDateTime(Date!.Value.DateTime);
+                savedDeliveryDocument.Amef = savedAmef;
+                savedDeliveryDocument.AmefId = savedAmef.Id;
+                await _deliveryDocumentService.Update(savedDeliveryDocument);
+            }
+            else
+            {
+                savedDeliveryDocument = GetSelectedDeliveryDocument();
+                savedDeliveryDocument.Amef = savedAmef;
+                savedDeliveryDocument.AmefId = savedAmef.Id;
+                await _deliveryDocumentService.Add(savedDeliveryDocument);
+            }
+        }
+        else
+        {
+            savedDeliveryDocument = SelectedDeliveryDocument;
+            savedDeliveryDocument.Number = Number ?? 0;
+            savedDeliveryDocument.Date = DateOnly.FromDateTime(Date!.Value.DateTime);
+            savedDeliveryDocument.Amef = savedAmef;
+            savedDeliveryDocument.AmefId = savedAmef.Id;
+            await _deliveryDocumentService.Update(savedDeliveryDocument);
+        }
+
+        await _deliveryDocumentService.SubmitChanges();
+        await LoadDeliveryDocumentsAsync();
+        SelectedDeliveryDocument = FilteredDeliveryDocuments.FirstOrDefault(d => d.Id == savedDeliveryDocument.Id);
+        AppLogger.LogInfo($"Successfully saved DeliveryDocument: Id={savedDeliveryDocument.Id}, Number={savedDeliveryDocument.Number}, Date={savedDeliveryDocument.Date}");
+
+        return savedDeliveryDocument;
+    }
+
+    public async Task DeleteDeliveryDocumentAsync()
+    {
+        if (SelectedDeliveryDocument is null) return;
+
+        var toDelete = SelectedDeliveryDocument;
+        AppLogger.LogInfo($"Deleting DeliveryDocument: Id={toDelete.Id}, Number={toDelete.Number}");
+
+        await _deliveryDocumentService.Delete(toDelete);
+        await _deliveryDocumentService.SubmitChanges();
+        ClearSelectedDeliveryDocument();
+        await LoadDeliveryDocumentsAsync();
+        AppLogger.LogInfo($"DeliveryDocument Id={toDelete.Id} deleted successfully.");
     }
 }

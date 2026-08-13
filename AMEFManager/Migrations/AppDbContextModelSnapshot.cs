@@ -23,7 +23,7 @@ namespace AMEFManager.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ClientId")
+                    b.Property<int>("ContractId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateOnly>("Date")
@@ -34,7 +34,7 @@ namespace AMEFManager.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ContractId");
 
                     b.ToTable("AdditionalDocuments");
                 });
@@ -105,16 +105,15 @@ namespace AMEFManager.Migrations
                     b.Property<DateOnly>("FiscalizationDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("NUI")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Series")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ServicePassword")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -126,9 +125,6 @@ namespace AMEFManager.Migrations
                     b.HasIndex("BillId");
 
                     b.HasIndex("ContractId");
-
-                    b.HasIndex("NUI")
-                        .IsUnique();
 
                     b.HasIndex("Series")
                         .IsUnique();
@@ -142,7 +138,19 @@ namespace AMEFManager.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Configuration")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceType")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Model")
@@ -181,6 +189,20 @@ namespace AMEFManager.Migrations
                     b.ToTable("Bills");
                 });
 
+            modelBuilder.Entity("AMEFManager.Models.C802Document", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("Number")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("C802Documents");
+                });
+
             modelBuilder.Entity("AMEFManager.Models.Client", b =>
                 {
                     b.Property<int>("Id")
@@ -198,6 +220,9 @@ namespace AMEFManager.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("PaysTVA")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("PersonId")
                         .HasColumnType("INTEGER");
 
@@ -213,9 +238,6 @@ namespace AMEFManager.Migrations
                         .IsUnique();
 
                     b.HasIndex("PersonId");
-
-                    b.HasIndex("RegistrationNumber")
-                        .IsUnique();
 
                     b.ToTable("Clients");
                 });
@@ -349,13 +371,22 @@ namespace AMEFManager.Migrations
 
                     b.HasIndex("AddressId");
 
-                    b.HasIndex("Cnp")
-                        .IsUnique();
-
-                    b.HasIndex("Series", "Number")
-                        .IsUnique();
-
                     b.ToTable("Persons");
+                });
+
+            modelBuilder.Entity("AMEFManager.Models.Reason", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Reasons");
                 });
 
             modelBuilder.Entity("AMEFManager.Models.SealingDocument", b =>
@@ -383,15 +414,30 @@ namespace AMEFManager.Migrations
                     b.ToTable("SealingDocuments");
                 });
 
+            modelBuilder.Entity("AmefC802Document", b =>
+                {
+                    b.Property<int>("AmefsId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("C802DocumentsId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("AmefsId", "C802DocumentsId");
+
+                    b.HasIndex("C802DocumentsId");
+
+                    b.ToTable("AmefC802Document");
+                });
+
             modelBuilder.Entity("AMEFManager.Models.AdditionalDocument", b =>
                 {
-                    b.HasOne("AMEFManager.Models.Client", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientId")
+                    b.HasOne("AMEFManager.Models.Contract", "Contract")
+                        .WithMany("AdditionalDocuments")
+                        .HasForeignKey("ContractId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Client");
+                    b.Navigation("Contract");
                 });
 
             modelBuilder.Entity("AMEFManager.Models.Amef", b =>
@@ -500,8 +546,25 @@ namespace AMEFManager.Migrations
                     b.Navigation("Amef");
                 });
 
+            modelBuilder.Entity("AmefC802Document", b =>
+                {
+                    b.HasOne("AMEFManager.Models.Amef", null)
+                        .WithMany()
+                        .HasForeignKey("AmefsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AMEFManager.Models.C802Document", null)
+                        .WithMany()
+                        .HasForeignKey("C802DocumentsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("AMEFManager.Models.Contract", b =>
                 {
+                    b.Navigation("AdditionalDocuments");
+
                     b.Navigation("Amefs");
                 });
 #pragma warning restore 612, 618

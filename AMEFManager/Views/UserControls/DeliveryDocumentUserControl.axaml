@@ -14,63 +14,69 @@
     </UserControl.Resources>
 
     <Panel>
-
+        <!-- Loading Indicator -->
         <StackPanel IsVisible="{Binding IsLoading}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="12">
-            <ProgressBar IsIndeterminate="True"
-                         Width="200" />
-            <TextBlock Text="Se incarca procesele verbale..."
-                       HorizontalAlignment="Center" />
+                    Spacing="12"
+                    Margin="0,20">
+            <ProgressBar IsIndeterminate="True" Width="200" />
+            <TextBlock Text="Se încarcă procesele verbale..."
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
         </StackPanel>
 
-        <ScrollViewer IsVisible="{Binding !IsLoading}">
-            <StackPanel>
+        <!-- Main Content -->
+        <StackPanel IsVisible="{Binding !IsLoading}" Spacing="16">
+            <!-- Card 1: Date Proces Verbal -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{Binding HeaderTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
-                <StackPanel Margin="0,0,0,16" MaxWidth="500" HorizontalAlignment="Left">
-                    <TextBlock Text="Selecteaza proces verbal" Margin="0,0,0,4" />
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right"
-                                Content="✕"
-                                Command="{Binding ClearSelectedDeliveryDocumentCommand}"
-                                Margin="8,0,0,0"
-                                VerticalAlignment="Center" />
-                        <ComboBox ItemsSource="{Binding FilteredDeliveryDocuments}"
-                                  SelectedItem="{Binding SelectedDeliveryDocument}"
-                                  PlaceholderText="Proces verbal nou"
-                                  HorizontalAlignment="Stretch">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Converter={StaticResource DeliveryDocumentDisplayConverter}}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </DockPanel>
+                    <!-- Selector -->
+                    <StackPanel Margin="0,0,0,12" MaxWidth="500" HorizontalAlignment="Left">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Content="✕"
+                                    Command="{Binding ClearSelectedDeliveryDocumentCommand}"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Curăță selecția" />
+                            <ComboBox ItemsSource="{Binding FilteredDeliveryDocuments}"
+                                      SelectedItem="{Binding SelectedDeliveryDocument}"
+                                      PlaceholderText="Proces verbal nou..."
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource DeliveryDocumentDisplayConverter}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </DockPanel>
+                    </StackPanel>
+
+                    <!-- Fields -->
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,16,12" MinWidth="150" Width="200">
+                            <TextBlock Text="Număr *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <NumericUpDown Minimum="0" FormatString="0" Value="{Binding Number}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="Dată *" FontWeight="Medium" Margin="0,0,0,4" />
+                            <DatePicker SelectedDate="{Binding Date}" />
+                        </StackPanel>
+                    </WrapPanel>
                 </StackPanel>
+            </Border>
 
-                <TextBlock Text="Date proces verbal" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
-
-                <WrapPanel Orientation="Horizontal">
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Număr *" Margin="0,0,0,4" />
-                        <NumericUpDown Minimum="0" FormatString="0" Value="{Binding Number}" />
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
-                        <TextBlock Text="Dată *" Margin="0,0,0,4" />
-                        <DatePicker SelectedDate="{Binding Date}" />
-                    </StackPanel>
-
-                </WrapPanel>
-
-                <TextBlock Text="AMEF" FontWeight="Bold" FontSize="16" Margin="0,16,0,8" />
-                <views:AmefUserControl DataContext="{Binding AmefUserControlViewModel}" Margin="24,0,0,0" />
-
+            <!-- Card 2: Embedded AMEF UserControl (Indented) -->
+            <StackPanel Margin="16,0,0,0">
+                <views:AmefUserControl DataContext="{Binding AmefUserControlViewModel}" />
             </StackPanel>
-        </ScrollViewer>
-
+        </StackPanel>
     </Panel>
-
 </UserControl>

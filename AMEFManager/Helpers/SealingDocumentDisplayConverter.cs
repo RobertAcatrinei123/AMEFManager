@@ -11,8 +11,8 @@ public class SealingDocumentDisplayConverter : IValueConverter
     {
         if (value is SealingDocument s)
         {
-            var amefModel = s.Amef != null ? s.Amef.Model : string.Empty;
-            return $"Nr. {s.Number} / {s.Date:dd.MM.yyyy} - {amefModel}";
+            var amefSeries = s.Amef != null ? s.Amef.Series : string.Empty;
+            return $"Nr. {s.Number} / {s.Date:dd.MM.yyyy} - {amefSeries}";
         }
         return value;
     }

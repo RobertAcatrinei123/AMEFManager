@@ -19,7 +19,11 @@ public class ClientService : AbstractService<Client>
 
     public async Task<Client?> FindByNationalIdentifier(string nationalIdentifier)
     {
-        return await _entities.FirstOrDefaultAsync(c => c.NationalIdentifier == nationalIdentifier);
+        if (string.IsNullOrWhiteSpace(nationalIdentifier)) return null;
+        var raw = nationalIdentifier.Trim();
+        var stripped = raw.StartsWith("RO", System.StringComparison.OrdinalIgnoreCase) ? raw[2..].Trim() : raw;
+        var withRo = raw.StartsWith("RO", System.StringComparison.OrdinalIgnoreCase) ? raw : $"RO{raw}";
+        return await _entities.FirstOrDefaultAsync(c => c.NationalIdentifier == raw || c.NationalIdentifier == stripped || c.NationalIdentifier == withRo);
     }
     public async Task<Client?> FindByRegistrationNumber(string registrationNumber)
     {
