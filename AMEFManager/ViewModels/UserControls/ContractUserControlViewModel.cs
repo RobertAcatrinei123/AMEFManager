@@ -196,7 +196,7 @@ public partial class ContractUserControlViewModel : ViewModelBase, IDisposable
                 (selectedClient == null || c.ClientId == selectedClient.Id) &&
                 (selectedType == null || c.ContractTypeId == selectedType.Id) ||
                 c.Equals(SelectedContract)
-            ).OrderBy(x => x.Number).ToList();
+            ).OrderByDescending(x => x.Number).ToList();
 
             FilteredContracts = new ObservableCollection<Contract>(filtered);
         }

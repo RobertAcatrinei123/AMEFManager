@@ -74,7 +74,7 @@ public partial class ContractMultiSelectUserControlViewModel : ViewModelBase, ID
         var filtered = _allContracts.Where(c =>
             (Number == null || c.Number == Number) &&
             !SelectedContracts.Contains(c)
-        ).OrderBy(x => x.Number).ToList();
+        ).OrderByDescending(x => x.Number).ToList();
 
         FilteredContracts = new ObservableCollection<Contract>(filtered);
     }

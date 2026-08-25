@@ -79,6 +79,8 @@ public partial class PersonUserControlViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private DateTimeOffset? _issuingDate;
 
+    public IReadOnlyList<string> AvailableRoles { get; } = ["ADMINISTRATOR", "IMPUTERNICIT"];
+
     [ObservableProperty]
     private string? _role;
 
@@ -159,7 +161,7 @@ public partial class PersonUserControlViewModel : ViewModelBase, IDisposable
                 Number = value.Number;
                 Issuer = value.Issuer;
                 IssuingDate = DateHelper.ToDateTimeOffset(value.IssuingDate);
-                Role = value.Role;
+                Role = AvailableRoles.FirstOrDefault(r => string.Equals(r, value.Role, StringComparison.OrdinalIgnoreCase)) ?? value.Role;
 
                 var matchingAddress = AddressUserControlViewModel.FilteredAddresses
                     .FirstOrDefault(a => a.Id == value.AddressId) ?? value.Address;
@@ -214,7 +216,7 @@ public partial class PersonUserControlViewModel : ViewModelBase, IDisposable
                 StartsWith(p.Role, Role) &&
                 (selectedAddress == null || p.AddressId == selectedAddress.Id) ||
                 p.Equals(SelectedPerson)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderByDescending(x => x.Id).ToList();
 
             FilteredPersons = new ObservableCollection<Person>(filtered);
         }

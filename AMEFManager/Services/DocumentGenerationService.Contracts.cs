@@ -121,6 +121,7 @@ public partial class DocumentGenerationService
 
         string representative = person != null ? $"{person.LastName} {person.FirstName}".Trim() : string.Empty;
         string frequency = type != null ? type.GetFrequency() : "COMPLETEAZA MANUAL";
+        string billingRules = type != null ? type.GetBillingRules() : string.Empty;
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -133,7 +134,8 @@ public partial class DocumentGenerationService
             { "{{reprezentant}}", representative },
             { "{{role}}", person?.Role ?? string.Empty },
             { "{{priceValue}}", type?.Value.ToString() ?? "0" },
-            { "{{frequency}}", frequency }
+            { "{{frequency}}", frequency },
+            { "{{billingRules}}", billingRules }
         };
     }
 
@@ -142,8 +144,10 @@ public partial class DocumentGenerationService
         var client = contract.Client;
         var person = client?.Person;
         var address = client?.Address;
+        var type = contract.Type;
 
         string representative = person != null ? $"{person.LastName} {person.FirstName}".Trim() : string.Empty;
+        string billingRules = type != null ? type.GetBillingRules() : string.Empty;
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -154,7 +158,8 @@ public partial class DocumentGenerationService
             { "{{regNr}}", client?.RegistrationNumber ?? string.Empty },
             { "{{cui}}", client?.GetFormattedCui() ?? string.Empty },
             { "{{reprezentant}}", representative },
-            { "{{role}}", person?.Role ?? string.Empty }
+            { "{{role}}", person?.Role ?? string.Empty },
+            { "{{billingRules}}", billingRules }
         };
     }
 }

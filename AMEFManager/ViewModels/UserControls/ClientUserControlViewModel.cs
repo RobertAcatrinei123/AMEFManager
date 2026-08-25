@@ -185,7 +185,7 @@ public partial class ClientUserControlViewModel : ViewModelBase, IDisposable
                 (selectedAddress == null || c.AddressId == selectedAddress.Id) &&
                 (selectedPerson == null || c.PersonId == selectedPerson.Id) ||
                 c.Equals(SelectedClient)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderByDescending(x => x.Id).ToList();
 
             FilteredClients = new ObservableCollection<Client>(filtered);
         }

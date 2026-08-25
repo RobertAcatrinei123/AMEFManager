@@ -128,7 +128,7 @@ public partial class ContractTypeUserControlViewModel : ViewModelBase, IDisposab
                 StartsWith(c.Name, Name) &&
                 (Value == null || c.Value == Value) ||
                 c.Equals(SelectedContractType)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderByDescending(x => x.Id).ToList();
 
             FilteredContractTypes = new ObservableCollection<ContractType>(filtered);
         }

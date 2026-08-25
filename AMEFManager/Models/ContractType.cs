@@ -23,4 +23,20 @@ public class ContractType
 
         return "COMPLETEAZA MANUAL";
     }
+
+    public string GetBillingRules()
+    {
+        if (string.IsNullOrWhiteSpace(Name))
+            return string.Empty;
+
+        var trimmed = Name.Trim();
+        if (string.Equals(trimmed, "sezonier", StringComparison.OrdinalIgnoreCase))
+            return "Facturile vor fi emise de Executant, in decursul sezonului estival";
+        if (string.Equals(trimmed, "anual", StringComparison.OrdinalIgnoreCase))
+            return "Facturile vor fi emise de Executant, anual, in prima luna a fiecarui an de contract.";
+        if (string.Equals(trimmed, "lunar", StringComparison.OrdinalIgnoreCase))
+            return "Facturile vor fi emise de Executant, lunar, cel mai tarziu in ultima zi lucratoare a fiecarei luni pentru serviciile prestate in luna curenta.";
+
+        return string.Empty;
+    }
 }

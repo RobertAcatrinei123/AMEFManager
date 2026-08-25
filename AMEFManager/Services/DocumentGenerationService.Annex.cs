@@ -69,6 +69,7 @@ public partial class DocumentGenerationService
 
         string representative = person != null ? $"{person.LastName} {person.FirstName}".Trim() : string.Empty;
         string frequency = type != null ? type.GetFrequency() : "COMPLETEAZA MANUAL";
+        string billingRules = type != null ? type.GetBillingRules() : string.Empty;
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -83,7 +84,8 @@ public partial class DocumentGenerationService
             { "{{reprezentant}}", representative },
             { "{{role}}", person?.Role ?? string.Empty },
             { "{{priceValue}}", type?.Value.ToString() ?? "0" },
-            { "{{frequency}}", frequency }
+            { "{{frequency}}", frequency },
+            { "{{billingRules}}", billingRules }
         };
     }
 }

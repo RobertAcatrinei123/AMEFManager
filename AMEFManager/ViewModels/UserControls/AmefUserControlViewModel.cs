@@ -246,7 +246,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
                 (selectedAuth == null || a.AuthorizationId == selectedAuth.Id) &&
                 (selectedAddress == null || a.AddressId == selectedAddress.Id) ||
                 a.Equals(SelectedAmef)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderByDescending(x => x.Id).ToList();
 
             FilteredAmefs = new ObservableCollection<Amef>(filtered);
         }

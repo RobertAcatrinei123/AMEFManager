@@ -134,7 +134,7 @@ public partial class BillUserControlViewModel : ViewModelBase, IDisposable
                 (BillNumber == null || b.BillNumber == BillNumber) &&
                 StartsWith(b.BillSeries, BillSeries) ||
                 b.Equals(SelectedBill)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderByDescending(x => x.Id).ToList();
 
             FilteredBills = new ObservableCollection<Bill>(filtered);
         }

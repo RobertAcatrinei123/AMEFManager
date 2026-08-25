@@ -153,7 +153,7 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase, IDi
                 (selectedContract == null || d.ContractId == selectedContract.Id) &&
                 (selectedClient == null || d.Contract?.ClientId == selectedClient.Id) ||
                 d.Equals(SelectedDocument)
-            ).OrderBy(x => x.Number).ToList();
+            ).OrderByDescending(x => x.Number).ToList();
 
             FilteredDocuments = new ObservableCollection<AdditionalDocument>(filtered);
         }

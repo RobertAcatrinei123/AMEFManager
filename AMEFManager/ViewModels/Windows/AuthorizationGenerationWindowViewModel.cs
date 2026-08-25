@@ -139,7 +139,7 @@ public partial class AuthorizationGenerationWindowViewModel : ViewModelBase
             Directory.CreateDirectory(targetDir);
             AppLogger.LogDebug($"[AuthorizationGenerationWindowViewModel] Target client output directory: '{targetDir}'");
 
-            string outputPath = Path.Combine(targetDir, $"AA {amef.Authorization.Number}.pdf");
+            string outputPath = Path.Combine(targetDir, $"Autorizatia nr. {amef.Authorization.Number} din data de {amef.Authorization.Date:dd.MM.yyyy}.pdf");
 
             AppLogger.LogInfo($"[AuthorizationGenerationWindowViewModel] Copying authorization for AMEF '{amef.Series}' to '{outputPath}'");
             await _documentGenerationService.CopyAuthorizationAsync(amef, outputPath);

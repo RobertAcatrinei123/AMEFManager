@@ -158,7 +158,7 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase, IDisposa
                 StartsWith(a.DeviceType, DeviceType) &&
                 StartsWith(a.Configuration, Configuration) ||
                 a.Equals(SelectedAuthorization)
-            ).OrderBy(x => x.Number).ToList();
+            ).OrderByDescending(x => x.Number).ToList();
 
             FilteredAuthorizations = new ObservableCollection<Authorization>(filtered);
         }

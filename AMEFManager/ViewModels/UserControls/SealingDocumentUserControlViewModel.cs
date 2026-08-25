@@ -156,7 +156,7 @@ public partial class SealingDocumentUserControlViewModel : ViewModelBase, IDispo
                 (selectedContract == null || s.Amef?.ContractId == selectedContract.Id) &&
                 (selectedClient == null || s.Amef?.Contract?.ClientId == selectedClient.Id) ||
                 s.Equals(SelectedSealingDocument)
-            ).OrderBy(x => x.Number).ToList();
+            ).OrderByDescending(x => x.Number).ToList();
 
             FilteredSealingDocuments = new ObservableCollection<SealingDocument>(filtered);
         }

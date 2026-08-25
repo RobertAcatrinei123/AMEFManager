@@ -156,7 +156,7 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase, IDisp
                 (selectedContract == null || d.Amef?.ContractId == selectedContract.Id) &&
                 (selectedClient == null || d.Amef?.Contract?.ClientId == selectedClient.Id) ||
                 d.Equals(SelectedDeliveryDocument)
-            ).OrderBy(x => x.Number).ToList();
+            ).OrderByDescending(x => x.Number).ToList();
 
             FilteredDeliveryDocuments = new ObservableCollection<DeliveryDocument>(filtered);
         }

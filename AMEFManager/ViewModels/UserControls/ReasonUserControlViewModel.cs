@@ -118,7 +118,7 @@ public partial class ReasonUserControlViewModel : ViewModelBase, IDisposable
             var filtered = _allReasons.Where(r =>
                 StartsWith(r.Text, Text) ||
                 r.Equals(SelectedReason)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderByDescending(x => x.Id).ToList();
 
             FilteredReasons = new ObservableCollection<Reason>(filtered);
         }

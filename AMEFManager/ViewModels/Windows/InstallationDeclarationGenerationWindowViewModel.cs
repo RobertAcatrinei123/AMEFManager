@@ -56,7 +56,7 @@ public partial class InstallationDeclarationGenerationWindowViewModel : ViewMode
         try
         {
             var reasonsList = await _reasonService.FindAll();
-            Reasons = new ObservableCollection<Reason>(reasonsList.OrderBy(r => r.Text));
+            Reasons = new ObservableCollection<Reason>(reasonsList.OrderByDescending(r => r.Id));
         }
         catch (Exception ex)
         {

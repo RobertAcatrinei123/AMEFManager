@@ -53,7 +53,7 @@ public partial class AmefMultiSelectUserControlViewModel : ViewModelBase, IDispo
             .Select(a => a.Contract)
             .GroupBy(c => c!.Id)
             .Select(g => g.First())
-            .OrderBy(c => c!.Number)
+            .OrderByDescending(c => c!.Number)
             .ToList();
             
         AvailableContracts = new ObservableCollection<Contract>(contracts!);
@@ -104,7 +104,7 @@ public partial class AmefMultiSelectUserControlViewModel : ViewModelBase, IDispo
             StartsWith(a.NUI, Nui) &&
             (SelectedContractFilter == null || a.Contract?.Id == SelectedContractFilter.Id) &&
             !SelectedAmefs.Contains(a)
-        ).OrderBy(x => x.Id).ToList();
+        ).OrderByDescending(x => x.Id).ToList();
 
         FilteredAmefs = new ObservableCollection<Amef>(filtered);
     }

@@ -95,7 +95,10 @@
 
                         <StackPanel Margin="0,0,16,12" MinWidth="200" Width="250">
                             <TextBlock Text="Rol *" FontWeight="Medium" Margin="0,0,0,4" />
-                            <TextBox Text="{Binding Role}" PlaceholderText="Ex: Administrator / Tehnician" />
+                            <ComboBox ItemsSource="{Binding AvailableRoles}"
+                                      SelectedItem="{Binding Role}"
+                                      PlaceholderText="Selectează rol..."
+                                      HorizontalAlignment="Stretch" />
                         </StackPanel>
                     </WrapPanel>
                 </StackPanel>

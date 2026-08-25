@@ -189,7 +189,7 @@ public partial class AddressUserControlViewModel : ViewModelBase, IDisposable
                 StartsWith(a.Apartment, Apartment) &&
                 StartsWith(a.Other, Other) ||
                 a.Equals(SelectedAddress)
-            ).OrderBy(x => x.Id).ToList();
+            ).OrderByDescending(x => x.Id).ToList();
 
             FilteredAddresses = new ObservableCollection<Address>(filtered);
         }
