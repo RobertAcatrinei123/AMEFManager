@@ -55,6 +55,11 @@
                             <TextBlock Text="Email" FontWeight="Medium" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding Email}" PlaceholderText="Ex: office@servicefiscal.ro"/>
                         </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="220" Width="280">
+                            <TextBlock Text="CNP Tehnician Service" FontWeight="Medium" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding CnpTehnicianService}" PlaceholderText="Ex: 1850101123456"/>
+                        </StackPanel>
                     </WrapPanel>
                 </StackPanel>
             </Border>

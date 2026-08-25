@@ -17,6 +17,7 @@ public partial class SettingsWindowViewModel : ViewModelBase
     [ObservableProperty] private string _cui = string.Empty;
     [ObservableProperty] private string _telefon = string.Empty;
     [ObservableProperty] private string _email = string.Empty;
+    [ObservableProperty] private string _cnpTehnicianService = string.Empty;
 
     // --- Group 2: Contabilitate ---
     [ObservableProperty] private string _denumireContabil = string.Empty;
@@ -51,6 +52,7 @@ public partial class SettingsWindowViewModel : ViewModelBase
         Cui = settings.Cui ?? string.Empty;
         Telefon = settings.Telefon ?? string.Empty;
         Email = settings.Email ?? string.Empty;
+        CnpTehnicianService = settings.CnpTehnicianService ?? string.Empty;
 
         // Group 2
         DenumireContabil = settings.DenumireContabil ?? string.Empty;
@@ -83,6 +85,7 @@ public partial class SettingsWindowViewModel : ViewModelBase
             _currentSettings.Cui = Cui?.Trim() ?? string.Empty;
             _currentSettings.Telefon = Telefon?.Trim() ?? string.Empty;
             _currentSettings.Email = Email?.Trim() ?? string.Empty;
+            _currentSettings.CnpTehnicianService = CnpTehnicianService?.Trim() ?? string.Empty;
 
             // Group 2
             _currentSettings.DenumireContabil = DenumireContabil?.Trim() ?? string.Empty;

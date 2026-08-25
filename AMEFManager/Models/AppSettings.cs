@@ -19,6 +19,7 @@ public class AppSettings
     public string Cui { get; set; } = string.Empty;
     public string Telefon { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string CnpTehnicianService { get; set; } = string.Empty;
 
     // Group 2: Contabilitate
     public string DenumireContabil { get; set; } = string.Empty;

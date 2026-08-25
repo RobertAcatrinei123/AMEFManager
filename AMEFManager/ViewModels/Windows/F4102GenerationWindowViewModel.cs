@@ -188,12 +188,12 @@ public partial class F4102GenerationWindowViewModel : ViewModelBase
                         : (a.Address?.GetRestAddress() ?? string.Empty);
                     int countyCode = CountyHelper.GetCountyCode(a.Address?.County ?? client.Address?.County);
 
-                    AppLogger.LogDebug($"[F4102GenerationWindowViewModel]  - Mapping AMEF [{amefIndex}]: nrAmef(NUI)='{a.NUI}', nrTs(Series)='{a.Series}', dataInsAmef='{formattedDate}', judet={countyCode}, loc='{city}', str='{street}', nr='{streetNr}', bloc='{block}', etaj='{floor}', apt='{apt}', alt='{alt}'");
+                    AppLogger.LogDebug($"[F4102GenerationWindowViewModel]  - Mapping AMEF [{amefIndex}]: nrAmef(NUI)='{a.NUI}', nrTs='{settings.CnpTehnicianService}', dataInsAmef='{formattedDate}', judet={countyCode}, loc='{city}', str='{street}', nr='{streetNr}', bloc='{block}', etaj='{floor}', apt='{apt}', alt='{alt}'");
 
                     var amefItem = new AmefItemF4102
                     {
                         NA = amefIndex++,
-                        NrTs = a.Series ?? string.Empty,
+                        NrTs = settings.CnpTehnicianService ?? string.Empty,
                         NrAmef = a.NUI ?? string.Empty,
                         DataInsAmef = formattedDate,
                         LocInst = new LocInstF4102
