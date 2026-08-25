@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class BillUserControlViewModel : ViewModelBase
+public partial class BillUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly BillService _billService;
     private List<Bill> _allBills = [];
@@ -238,5 +238,9 @@ public partial class BillUserControlViewModel : ViewModelBase
         ClearSelectedBill();
         await LoadBillsAsync();
         AppLogger.LogInfo($"Bill Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
     }
 }

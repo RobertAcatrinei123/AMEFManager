@@ -12,36 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class AddressWindowViewModel : ViewModelBase
+public partial class AddressWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public AddressUserControlViewModel AddressUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public AddressWindowViewModel()
-        : this(App.Services.GetRequiredService<AddressService>())
-    {
-    }
-
     public AddressWindowViewModel(AddressService addressService)
+        : this(new AddressUserControlViewModel(addressService))
     {
-        AddressUserControlViewModel = new AddressUserControlViewModel(addressService);
-        AddressUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public AddressWindowViewModel(AddressUserControlViewModel userControlViewModel)
     {
         AddressUserControlViewModel = userControlViewModel;
-        AddressUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress))
             {
@@ -50,6 +39,7 @@ public partial class AddressWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        AddressUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -118,5 +108,14 @@ public partial class AddressWindowViewModel : ViewModelBase
         {
             AddressUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AddressUserControlViewModel.PropertyChanged -= _childHandler;
+        AddressUserControlViewModel.Dispose();
     }
 }

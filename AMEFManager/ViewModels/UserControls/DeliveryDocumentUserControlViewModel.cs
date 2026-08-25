@@ -9,14 +9,20 @@ using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using System.ComponentModel;
+
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
+public partial class DeliveryDocumentUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly DeliveryDocumentService _deliveryDocumentService;
+    private readonly PropertyChangedEventHandler _amefHandler;
+    private readonly PropertyChangedEventHandler _contractHandler;
+    private readonly PropertyChangedEventHandler _clientHandler;
     private List<DeliveryDocument> _allDeliveryDocuments = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
+    private bool _disposed;
 
     public AmefUserControlViewModel AmefUserControlViewModel { get; }
 
@@ -39,9 +45,13 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
             HeaderTitle = "AMEF Predat"
         };
 
-        AmefUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AmefUserControlViewModel.SelectedAmef) && !_isUpdatingFromSelection) ApplyFilter(); };
-        AmefUserControlViewModel.ContractUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
-        AmefUserControlViewModel.ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _amefHandler = (s, e) => { if (e.PropertyName == nameof(AmefUserControlViewModel.SelectedAmef) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _contractHandler = (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _clientHandler = (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
+
+        AmefUserControlViewModel.PropertyChanged += _amefHandler;
+        AmefUserControlViewModel.ContractUserControlViewModel.PropertyChanged += _contractHandler;
+        AmefUserControlViewModel.ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged += _clientHandler;
 
         LoadDeliveryDocumentsCommand.Execute(null);
         _hasBeenFiltered = false;
@@ -235,5 +245,17 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase
         ClearSelectedDeliveryDocument();
         await LoadDeliveryDocumentsAsync();
         AppLogger.LogInfo($"DeliveryDocument Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AmefUserControlViewModel.PropertyChanged -= _amefHandler;
+        AmefUserControlViewModel.ContractUserControlViewModel.PropertyChanged -= _contractHandler;
+        AmefUserControlViewModel.ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged -= _clientHandler;
+
+        AmefUserControlViewModel.Dispose();
     }
 }

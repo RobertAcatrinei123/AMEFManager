@@ -9,27 +9,32 @@ using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using System.ComponentModel;
+
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class PersonUserControlViewModel : ViewModelBase
+public partial class PersonUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly PersonService _personService;
     private readonly AddressService _addressService;
+    private readonly PropertyChangedEventHandler _addressHandler;
     private List<Person> _allPersons = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
+    private bool _disposed;
 
     public AddressUserControlViewModel AddressUserControlViewModel { get; }
 
-    public PersonUserControlViewModel(PersonService personService, AddressService addressService)
+    public PersonUserControlViewModel(PersonService personService, AddressService addressService, List<Address>? initialAddresses = null)
     {
         _personService = personService;
         _addressService = addressService;
-        AddressUserControlViewModel = new AddressUserControlViewModel(addressService)
+        AddressUserControlViewModel = new AddressUserControlViewModel(addressService, initialAddresses)
         {
             HeaderTitle = "Adresă Domiciliu Persoană"
         };
-        AddressUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _addressHandler = (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
+        AddressUserControlViewModel.PropertyChanged += _addressHandler;
 
         LoadPersonsCommand.Execute(null);
         _hasBeenFiltered = false;
@@ -372,5 +377,14 @@ public partial class PersonUserControlViewModel : ViewModelBase
         await LoadPersonsAsync();
         await AddressUserControlViewModel.LoadAddressesAsync();
         AppLogger.LogInfo($"Person Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AddressUserControlViewModel.PropertyChanged -= _addressHandler;
+        AddressUserControlViewModel.Dispose();
     }
 }

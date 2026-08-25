@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class ContractTypeUserControlViewModel : ViewModelBase
+public partial class ContractTypeUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly ContractTypeService _contractTypeService;
     private List<ContractType> _allContractTypes = [];
@@ -222,5 +222,9 @@ public partial class ContractTypeUserControlViewModel : ViewModelBase
         ClearSelectedContractType();
         await LoadContractTypesAsync();
         AppLogger.LogInfo($"ContractType Id={selected.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
     }
 }

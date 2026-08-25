@@ -12,23 +12,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class AdditionalDocumentWindowViewModel : ViewModelBase
+public partial class AdditionalDocumentWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public AdditionalDocumentUserControlViewModel DocumentUserControlViewModel { get; }
     public AdditionalDocumentUserControlViewModel AdditionalDocumentUserControlViewModel => DocumentUserControlViewModel;
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
-
-    public AdditionalDocumentWindowViewModel()
-        : this(App.Services.GetRequiredService<AdditionalDocumentService>(),
-               App.Services.GetRequiredService<ContractService>(),
-               App.Services.GetRequiredService<ContractTypeService>(),
-               App.Services.GetRequiredService<ClientService>(),
-               App.Services.GetRequiredService<AddressService>(),
-               App.Services.GetRequiredService<PersonService>())
-    {
-    }
 
     public AdditionalDocumentWindowViewModel(
         AdditionalDocumentService documentService,
@@ -50,7 +43,7 @@ public partial class AdditionalDocumentWindowViewModel : ViewModelBase
     public AdditionalDocumentWindowViewModel(AdditionalDocumentUserControlViewModel userControlViewModel)
     {
         DocumentUserControlViewModel = userControlViewModel;
-        DocumentUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(DocumentUserControlViewModel.SelectedDocument))
             {
@@ -59,6 +52,7 @@ public partial class AdditionalDocumentWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        DocumentUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -127,5 +121,14 @@ public partial class AdditionalDocumentWindowViewModel : ViewModelBase
         {
             DocumentUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        DocumentUserControlViewModel.PropertyChanged -= _childHandler;
+        DocumentUserControlViewModel.Dispose();
     }
 }

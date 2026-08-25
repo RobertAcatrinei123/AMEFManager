@@ -23,12 +23,27 @@ public static class MessageBox
 
     private static async Task Show(string message, string title)
     {
-        var dialog = new MessageBoxWindow(message, title);
-
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
-            && desktop.MainWindow is not null)
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            await dialog.ShowDialog(desktop.MainWindow);
+            if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+            {
+                if (desktop.MainWindow is not null)
+                {
+                    var dialog = new MessageBoxWindow(message, title);
+                    await dialog.ShowDialog(desktop.MainWindow);
+                }
+            }
+            else
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    if (desktop.MainWindow is not null)
+                    {
+                        var dialog = new MessageBoxWindow(message, title);
+                        await dialog.ShowDialog(desktop.MainWindow);
+                    }
+                });
+            }
         }
     }
 }

@@ -12,25 +12,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class SealingDocumentWindowViewModel : ViewModelBase
+public partial class SealingDocumentWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public SealingDocumentUserControlViewModel SealingDocumentUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
-
-    public SealingDocumentWindowViewModel()
-        : this(App.Services.GetRequiredService<SealingDocumentService>(),
-               App.Services.GetRequiredService<AmefService>(),
-               App.Services.GetRequiredService<BillService>(),
-               App.Services.GetRequiredService<AddressService>(),
-               App.Services.GetRequiredService<AuthorizationService>(),
-               App.Services.GetRequiredService<ContractService>(),
-               App.Services.GetRequiredService<ContractTypeService>(),
-               App.Services.GetRequiredService<ClientService>(),
-               App.Services.GetRequiredService<PersonService>())
-    {
-    }
 
     public SealingDocumentWindowViewModel(
         SealingDocumentService sealingDocumentService,
@@ -42,24 +32,23 @@ public partial class SealingDocumentWindowViewModel : ViewModelBase
         ContractTypeService contractTypeService,
         ClientService clientService,
         PersonService personService)
+        : this(new SealingDocumentUserControlViewModel(
+            sealingDocumentService,
+            amefService,
+            billService,
+            addressService,
+            authorizationService,
+            contractService,
+            contractTypeService,
+            clientService,
+            personService))
     {
-        SealingDocumentUserControlViewModel = new SealingDocumentUserControlViewModel(
-            sealingDocumentService, amefService, billService, addressService, authorizationService, contractService, contractTypeService, clientService, personService);
-        SealingDocumentUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(SealingDocumentUserControlViewModel.SelectedSealingDocument))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public SealingDocumentWindowViewModel(SealingDocumentUserControlViewModel userControlViewModel)
     {
         SealingDocumentUserControlViewModel = userControlViewModel;
-        SealingDocumentUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(SealingDocumentUserControlViewModel.SelectedSealingDocument))
             {
@@ -68,6 +57,7 @@ public partial class SealingDocumentWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        SealingDocumentUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -137,5 +127,14 @@ public partial class SealingDocumentWindowViewModel : ViewModelBase
         {
             SealingDocumentUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        SealingDocumentUserControlViewModel.PropertyChanged -= _childHandler;
+        SealingDocumentUserControlViewModel.Dispose();
     }
 }

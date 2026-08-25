@@ -28,7 +28,7 @@
                         </MenuItem>
                         <MenuItem Header="Generare">
                                 <MenuItem Header="Contracte" Command="{Binding NavigateCommand}" CommandParameter="ContractGeneration" />
-                                <MenuItem Header="Anexe contracte" Command="{Binding NavigateCommand}" CommandParameter="ContractAnnexGeneration" />
+                                <MenuItem Header="Acte aditionale" Command="{Binding NavigateCommand}" CommandParameter="ContractAnnexGeneration" />
                                 <MenuItem Header="Declaratii de instalare (DI)" Command="{Binding NavigateCommand}" CommandParameter="InstallationDeclarationGeneration" />
                                 <MenuItem Header="Autorizatie" Command="{Binding NavigateCommand}" CommandParameter="AuthorizationGeneration" />
                                 <MenuItem Header="Garantie" Command="{Binding NavigateCommand}" CommandParameter="WarrantyGeneration" />

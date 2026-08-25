@@ -9,26 +9,31 @@ using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using System.ComponentModel;
+
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class ContractUserControlViewModel : ViewModelBase
+public partial class ContractUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly ContractService _contractService;
+    private readonly PropertyChangedEventHandler _clientHandler;
+    private readonly PropertyChangedEventHandler _contractTypeHandler;
     private List<Contract> _allContracts = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
+    private bool _disposed;
 
     public ContractTypeUserControlViewModel ContractTypeUserControlViewModel { get; }
     public ClientUserControlViewModel ClientUserControlViewModel { get; }
 
-    public ContractUserControlViewModel(ContractService contractService, ContractTypeService contractTypeService, ClientService clientService, AddressService addressService, PersonService personService)
+    public ContractUserControlViewModel(ContractService contractService, ContractTypeService contractTypeService, ClientService clientService, AddressService addressService, PersonService personService, List<Address>? initialAddresses = null)
     {
         _contractService = contractService;
         ContractTypeUserControlViewModel = new ContractTypeUserControlViewModel(contractTypeService)
         {
             HeaderTitle = "Tip Contract"
         };
-        ClientUserControlViewModel = new ClientUserControlViewModel(clientService, addressService, personService)
+        ClientUserControlViewModel = new ClientUserControlViewModel(clientService, addressService, personService, initialAddresses)
         {
             HeaderTitle = "Client Beneficiar Contract"
         };
@@ -36,8 +41,10 @@ public partial class ContractUserControlViewModel : ViewModelBase
         ClientUserControlViewModel.PersonUserControlViewModel.HeaderTitle = "Date Reprezentant Legal Client";
         ClientUserControlViewModel.PersonUserControlViewModel.AddressUserControlViewModel.HeaderTitle = "Adresă Domiciliu Reprezentant";
         
-        ClientUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
-        ContractTypeUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _clientHandler = (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _contractTypeHandler = (s, e) => { if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType) && !_isUpdatingFromSelection) ApplyFilter(); };
+        ClientUserControlViewModel.PropertyChanged += _clientHandler;
+        ContractTypeUserControlViewModel.PropertyChanged += _contractTypeHandler;
 
         LoadContractsCommand.Execute(null);
         _hasBeenFiltered = false;
@@ -143,7 +150,7 @@ public partial class ContractUserControlViewModel : ViewModelBase
                 Number = value.Number;
                 Date = new DateTimeOffset(value.Date.ToDateTime(TimeOnly.MinValue));
                 IsActive = value.IsActive;
-                ValidUntil = new DateTimeOffset(value.ValidUntil);
+                ValidUntil = new DateTimeOffset(value.ValidUntil.ToDateTime(TimeOnly.MinValue));
 
                 var matchingType = ContractTypeUserControlViewModel.FilteredContractTypes
                     .FirstOrDefault(t => t.Id == value.ContractTypeId);
@@ -224,7 +231,7 @@ public partial class ContractUserControlViewModel : ViewModelBase
                 Number = Number ?? 0,
                 Date = DateOnly.FromDateTime(Date!.Value.DateTime),
                 IsActive = IsActive,
-                ValidUntil = ValidUntil!.Value.DateTime
+                ValidUntil = DateOnly.FromDateTime(ValidUntil!.Value.DateTime)
             };
         }
 
@@ -248,7 +255,7 @@ public partial class ContractUserControlViewModel : ViewModelBase
                 savedContract = existing;
                 savedContract.Date = DateOnly.FromDateTime(Date!.Value.DateTime);
                 savedContract.IsActive = IsActive;
-                savedContract.ValidUntil = ValidUntil!.Value.DateTime;
+                savedContract.ValidUntil = DateOnly.FromDateTime(ValidUntil!.Value.DateTime);
                 savedContract.Type = savedType;
                 savedContract.ContractTypeId = savedType.Id;
                 savedContract.Client = savedClient;
@@ -271,7 +278,7 @@ public partial class ContractUserControlViewModel : ViewModelBase
             savedContract.Number = Number ?? 0;
             savedContract.Date = DateOnly.FromDateTime(Date!.Value.DateTime);
             savedContract.IsActive = IsActive;
-            savedContract.ValidUntil = ValidUntil!.Value.DateTime;
+            savedContract.ValidUntil = DateOnly.FromDateTime(ValidUntil!.Value.DateTime);
             savedContract.Type = savedType;
             savedContract.ContractTypeId = savedType.Id;
             savedContract.Client = savedClient;
@@ -298,5 +305,17 @@ public partial class ContractUserControlViewModel : ViewModelBase
         ClearSelectedContract();
         await LoadContractsAsync();
         AppLogger.LogInfo($"Contract Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        ClientUserControlViewModel.PropertyChanged -= _clientHandler;
+        ContractTypeUserControlViewModel.PropertyChanged -= _contractTypeHandler;
+
+        ContractTypeUserControlViewModel.Dispose();
+        ClientUserControlViewModel.Dispose();
     }
 }

@@ -56,6 +56,16 @@ public partial class C801GenerationWindowViewModel : ViewModelBase
             errors.Add("AMEF-urile selectate trebuie sa fie asociate unui Client valid (prin contract).");
         }
 
+        if (amefs.Any(a => a.Contract?.Client != null && a.Contract.Client.Person == null))
+        {
+            errors.Add("Clientul asociat nu are o persoană reprezentant configurată.");
+        }
+
+        if (amefs.Any(a => a.Authorization == null))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă o autorizație asociată.");
+        }
+
         return errors;
     }
 
@@ -83,18 +93,25 @@ public partial class C801GenerationWindowViewModel : ViewModelBase
                 return;
             }
 
-            AppLogger.LogInfo($"[C801GenerationWindowViewModel] Selection validation passed for {amefs.Count} AMEF(s).");
-
             var firstAmef = amefs.FirstOrDefault();
             var client = firstAmef?.Contract?.Client;
             var person = client?.Person;
 
             if (client == null || person == null)
             {
-                var invEx = new InvalidOperationException("Selected AMEF does not have a valid Client or Representative Person associated.");
-                AppLogger.LogError("[C801GenerationWindowViewModel] Client or Person entity missing.", invEx);
-                throw invEx;
+                ErrorMessage = "Clientul sau persoana reprezentant lipsește pentru AMEF-ul selectat.";
+                AppLogger.LogWarning("[C801GenerationWindowViewModel] Client or Person entity missing.");
+                return;
             }
+
+            if (amefs.Any(a => a.Authorization == null))
+            {
+                ErrorMessage = "Toate AMEF-urile selectate trebuie să aibă o autorizație asociată.";
+                AppLogger.LogWarning("[C801GenerationWindowViewModel] Some selected AMEFs are missing authorization.");
+                return;
+            }
+
+            AppLogger.LogInfo($"[C801GenerationWindowViewModel] Selection validation passed for {amefs.Count} AMEF(s).");
 
             string clientCif = client.NationalIdentifier ?? string.Empty;
             string clientAddress = client.Address?.GetFullAddress() ?? string.Empty;
@@ -159,7 +176,9 @@ public partial class C801GenerationWindowViewModel : ViewModelBase
             var settings = _settingsService.GetSettings();
             string outputBaseDir = !string.IsNullOrWhiteSpace(settings.ClientPath)
                 ? settings.ClientPath
-                : Path.Combine(settings.ServerPath, "Contracte Clientii");
+                : (!string.IsNullOrWhiteSpace(settings.ServerPath)
+                    ? Path.Combine(settings.ServerPath, "Contracte Clientii")
+                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Contracte Clientii"));
 
             var contract = firstAmef?.Contract;
             var invalidChars = Path.GetInvalidFileNameChars();

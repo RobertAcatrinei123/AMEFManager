@@ -13,7 +13,7 @@
             
             <!-- Page Header -->
             <StackPanel Spacing="4" Margin="0,0,0,8">
-                <TextBlock Text="Generare Anexe Contracte" FontSize="24" FontWeight="Bold" />
+                <TextBlock Text="Generare Acte Adiționale" FontSize="24" FontWeight="Bold" />
             </StackPanel>
 
             <!-- Status / Result Banner (Success) -->
@@ -49,7 +49,7 @@
                     <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
                     <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                        <Button Content="Generează Anexe" 
+                        <Button Content="Generează Acte Adiționale" 
                                 Command="{Binding GenerateAnnexesCommand}" 
                                 Classes="accent" 
                                 IsEnabled="{Binding !IsGenerating}" 

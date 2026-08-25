@@ -12,37 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class PersonWindowViewModel : ViewModelBase
+public partial class PersonWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public PersonUserControlViewModel PersonUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public PersonWindowViewModel()
-        : this(App.Services.GetRequiredService<PersonService>(),
-               App.Services.GetRequiredService<AddressService>())
-    {
-    }
-
     public PersonWindowViewModel(PersonService personService, AddressService addressService)
+        : this(new PersonUserControlViewModel(personService, addressService))
     {
-        PersonUserControlViewModel = new PersonUserControlViewModel(personService, addressService);
-        PersonUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(PersonUserControlViewModel.SelectedPerson))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public PersonWindowViewModel(PersonUserControlViewModel userControlViewModel)
     {
         PersonUserControlViewModel = userControlViewModel;
-        PersonUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(PersonUserControlViewModel.SelectedPerson))
             {
@@ -51,6 +39,7 @@ public partial class PersonWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        PersonUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -119,5 +108,14 @@ public partial class PersonWindowViewModel : ViewModelBase
         {
             PersonUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        PersonUserControlViewModel.PropertyChanged -= _childHandler;
+        PersonUserControlViewModel.Dispose();
     }
 }

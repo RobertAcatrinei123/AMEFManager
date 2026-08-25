@@ -12,36 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class ReasonWindowViewModel : ViewModelBase
+public partial class ReasonWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public ReasonUserControlViewModel ReasonUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public ReasonWindowViewModel()
-        : this(App.Services.GetRequiredService<ReasonService>())
-    {
-    }
-
     public ReasonWindowViewModel(ReasonService reasonService)
+        : this(new ReasonUserControlViewModel(reasonService))
     {
-        ReasonUserControlViewModel = new ReasonUserControlViewModel(reasonService);
-        ReasonUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(ReasonUserControlViewModel.SelectedReason))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public ReasonWindowViewModel(ReasonUserControlViewModel userControlViewModel)
     {
         ReasonUserControlViewModel = userControlViewModel;
-        ReasonUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(ReasonUserControlViewModel.SelectedReason))
             {
@@ -50,6 +39,7 @@ public partial class ReasonWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        ReasonUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -118,5 +108,14 @@ public partial class ReasonWindowViewModel : ViewModelBase
         {
             ReasonUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        ReasonUserControlViewModel.PropertyChanged -= _childHandler;
+        ReasonUserControlViewModel.Dispose();
     }
 }

@@ -10,7 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class ContractMultiSelectUserControlViewModel : ViewModelBase
+public partial class ContractMultiSelectUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly ContractService _contractService;
     private List<Contract> _allContracts = [];
@@ -86,5 +86,9 @@ public partial class ContractMultiSelectUserControlViewModel : ViewModelBase
             return Validator(SelectedContracts);
         }
         return [];
+    }
+
+    public void Dispose()
+    {
     }
 }

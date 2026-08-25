@@ -11,13 +11,17 @@ using AMEFManager.ViewModels.UserControls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using System.Collections.Specialized;
+
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class SealingDocumentGenerationWindowViewModel : ViewModelBase
+public partial class SealingDocumentGenerationWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly SealingDocumentService _sealingDocumentService;
     private readonly IDocumentGenerationService _documentGenerationService;
     private readonly SettingsService _settingsService;
+    private readonly NotifyCollectionChangedEventHandler _selectedAmefsHandler;
+    private bool _disposed;
 
     public AmefMultiSelectUserControlViewModel AmefMultiSelectUserControlViewModel { get; }
 
@@ -41,10 +45,11 @@ public partial class SealingDocumentGenerationWindowViewModel : ViewModelBase
         AmefMultiSelectUserControlViewModel = new AmefMultiSelectUserControlViewModel(amefService);
         AmefMultiSelectUserControlViewModel.Validator = ValidateAmefs;
 
-        AmefMultiSelectUserControlViewModel.SelectedAmefs.CollectionChanged += async (s, e) =>
+        _selectedAmefsHandler = async (s, e) =>
         {
             await OnSelectedAmefsChangedAsync();
         };
+        AmefMultiSelectUserControlViewModel.SelectedAmefs.CollectionChanged += _selectedAmefsHandler;
 
         _ = InitializeNextNumberAsync();
     }
@@ -62,10 +67,11 @@ public partial class SealingDocumentGenerationWindowViewModel : ViewModelBase
         AmefMultiSelectUserControlViewModel = amefMultiSelectUserControlViewModel;
         AmefMultiSelectUserControlViewModel.Validator = ValidateAmefs;
 
-        AmefMultiSelectUserControlViewModel.SelectedAmefs.CollectionChanged += async (s, e) =>
+        _selectedAmefsHandler = async (s, e) =>
         {
             await OnSelectedAmefsChangedAsync();
         };
+        AmefMultiSelectUserControlViewModel.SelectedAmefs.CollectionChanged += _selectedAmefsHandler;
 
         _ = InitializeNextNumberAsync();
     }
@@ -247,5 +253,14 @@ public partial class SealingDocumentGenerationWindowViewModel : ViewModelBase
         {
             IsGenerating = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AmefMultiSelectUserControlViewModel.SelectedAmefs.CollectionChanged -= _selectedAmefsHandler;
+        AmefMultiSelectUserControlViewModel.Dispose();
     }
 }

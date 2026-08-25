@@ -12,36 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class BillWindowViewModel : ViewModelBase
+public partial class BillWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public BillUserControlViewModel BillUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public BillWindowViewModel()
-        : this(App.Services.GetRequiredService<BillService>())
-    {
-    }
-
     public BillWindowViewModel(BillService billService)
+        : this(new BillUserControlViewModel(billService))
     {
-        BillUserControlViewModel = new BillUserControlViewModel(billService);
-        BillUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(BillUserControlViewModel.SelectedBill))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public BillWindowViewModel(BillUserControlViewModel userControlViewModel)
     {
         BillUserControlViewModel = userControlViewModel;
-        BillUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(BillUserControlViewModel.SelectedBill))
             {
@@ -50,6 +39,7 @@ public partial class BillWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        BillUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -118,5 +108,14 @@ public partial class BillWindowViewModel : ViewModelBase
         {
             BillUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        BillUserControlViewModel.PropertyChanged -= _childHandler;
+        BillUserControlViewModel.Dispose();
     }
 }

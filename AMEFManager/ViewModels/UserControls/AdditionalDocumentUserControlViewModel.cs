@@ -9,14 +9,19 @@ using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using System.ComponentModel;
+
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
+public partial class AdditionalDocumentUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly AdditionalDocumentService _documentService;
+    private readonly PropertyChangedEventHandler _contractHandler;
+    private readonly PropertyChangedEventHandler _clientHandler;
     private List<AdditionalDocument> _allDocuments = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
+    private bool _disposed;
 
     public ContractUserControlViewModel ContractUserControlViewModel { get; }
 
@@ -28,8 +33,10 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
             HeaderTitle = "Contract de Bază"
         };
         
-        ContractUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
-        ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _contractHandler = (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _clientHandler = (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
+        ContractUserControlViewModel.PropertyChanged += _contractHandler;
+        ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged += _clientHandler;
 
         LoadDocumentsCommand.Execute(null);
         _hasBeenFiltered = false;
@@ -234,5 +241,16 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase
         ClearSelectedDocument();
         await LoadDocumentsAsync();
         AppLogger.LogInfo($"AdditionalDocument Id={selected.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        ContractUserControlViewModel.PropertyChanged -= _contractHandler;
+        ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged -= _clientHandler;
+
+        ContractUserControlViewModel.Dispose();
     }
 }

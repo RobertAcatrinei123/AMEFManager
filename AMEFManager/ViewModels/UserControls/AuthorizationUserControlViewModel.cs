@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class AuthorizationUserControlViewModel : ViewModelBase
+public partial class AuthorizationUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly AuthorizationService _authorizationService;
     private List<Authorization> _allAuthorizations = [];
@@ -261,5 +261,9 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase
         ClearSelectedAuthorization();
         await LoadAuthorizationsAsync();
         AppLogger.LogInfo($"Authorization Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
     }
 }

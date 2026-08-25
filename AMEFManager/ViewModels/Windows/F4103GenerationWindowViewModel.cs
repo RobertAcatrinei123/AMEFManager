@@ -44,7 +44,29 @@ public partial class F4103GenerationWindowViewModel : ViewModelBase
         if (!amefs.Any())
         {
             errors.Add("Cel putin un AMEF trebuie selectat.");
+            return errors;
         }
+
+        if (amefs.Any(a => a.Contract?.Client == null))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să fie asociate unui client valid (prin contract).");
+        }
+
+        if (amefs.Any(a => string.IsNullOrWhiteSpace(a.NUI)))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă un NUI valid completat.");
+        }
+
+        if (amefs.Any(a => string.IsNullOrWhiteSpace(a.Series)))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă o serie validă.");
+        }
+
+        if (amefs.Any(a => a.Authorization == null))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă o autorizație asociată.");
+        }
+
         return errors;
     }
 
@@ -74,6 +96,30 @@ public partial class F4103GenerationWindowViewModel : ViewModelBase
 
             var settings = _settingsService.GetSettings();
 
+            if (string.IsNullOrWhiteSpace(settings.Cui) || string.IsNullOrWhiteSpace(settings.NumeSocietate))
+            {
+                ErrorMessage = "Datele societății (CUI sau Denumire) nu sunt configurate în Setări.";
+                AppLogger.LogWarning("[F4103GenerationWindowViewModel] Company settings missing: CUI or NumeSocietate is empty.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.DenumireContabil) || string.IsNullOrWhiteSpace(settings.CnpContabil))
+            {
+                ErrorMessage = "Datele contabilului (Denumire sau CNP/CIF) nu sunt configurate în Setări.";
+                AppLogger.LogWarning("[F4103GenerationWindowViewModel] Accountant settings missing: DenumireContabil or CnpContabil is empty.");
+                return;
+            }
+
+            var invalidAmefs = amefs.Where(a => a.Contract?.Client == null || a.Authorization == null || string.IsNullOrWhiteSpace(a.NUI)).ToList();
+            if (invalidAmefs.Any())
+            {
+                ErrorMessage = "Toate AMEF-urile selectate trebuie să aibă client, autorizație și NUI asociate.";
+                AppLogger.LogWarning("[F4103GenerationWindowViewModel] Some selected AMEFs are missing client, authorization, or NUI.");
+                return;
+            }
+
+            AppLogger.LogInfo($"[F4103GenerationWindowViewModel] Selection validation passed for {amefs.Count} AMEF(s).");
+
             string cleanCui = Regex.Replace(settings.Cui ?? "", @"[^\d]", "");
             long numericCui = long.TryParse(cleanCui, out long parsed) ? parsed : 0L;
             long totalPlataA = numericCui + amefs.Count;
@@ -89,13 +135,13 @@ public partial class F4103GenerationWindowViewModel : ViewModelBase
             f4103.InfP.CalD1 = 0;
             f4103.InfP.CalD2 = 1;
             f4103.InfP.Cif = cleanCui;
-            f4103.InfP.Den = settings.NumeSocietate;
-            f4103.InfP.Email = settings.Email;
+            f4103.InfP.Den = settings.NumeSocietate ?? string.Empty;
+            f4103.InfP.Email = settings.Email ?? string.Empty;
             f4103.InfP.Telefon = Regex.Replace(settings.Telefon ?? "", @"[^\d]", "");
 
-            f4103.InfS.Sub2.CifP = settings.CnpContabil;
-            f4103.InfS.Sub2.DenP = settings.DenumireContabil;
-            f4103.InfS.Sub2.EmailP = settings.EmailContabil;
+            f4103.InfS.Sub2.CifP = settings.CnpContabil ?? string.Empty;
+            f4103.InfS.Sub2.DenP = settings.DenumireContabil ?? string.Empty;
+            f4103.InfS.Sub2.EmailP = settings.EmailContabil ?? string.Empty;
             f4103.InfS.Sub2.TelP = Regex.Replace(settings.TelContabil ?? "", @"[^\d]", "");
             f4103.InfS.Sub2.CalP1 = 1;
             f4103.InfS.Sub2.CalP2 = 0;
@@ -117,16 +163,24 @@ public partial class F4103GenerationWindowViewModel : ViewModelBase
                 item.Sub2.DenF = clientName;
                 item.Sub2.BifaL = 1;
                 item.Sub2.NrAvizIci = a.Authorization?.Number.ToString() ?? string.Empty;
-                item.Sub2.DataAvizIci = a.Authorization?.Date.ToString("dd.MM.yyyy") ?? string.Empty;
+                item.Sub2.DataAvizIci = a.Authorization != null && a.Authorization.Date != default
+                    ? a.Authorization.Date.ToString("dd.MM.yyyy")
+                    : string.Empty;
 
                 f4103.Amef.Add(item);
             }
 
-            var destinationDir = Path.Combine(settings.ANAFDocumentsPath, "F4103", DateTime.Now.Month.ToString("D2"));
+            string anafBase = !string.IsNullOrWhiteSpace(settings.ANAFDocumentsPath)
+                ? settings.ANAFDocumentsPath
+                : (!string.IsNullOrWhiteSpace(settings.ServerPath)
+                    ? Path.Combine(settings.ServerPath, "ANAF")
+                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ANAF"));
+            var destinationDir = Path.Combine(anafBase, "F4103", DateTime.Now.Month.ToString("D2"));
             Directory.CreateDirectory(destinationDir);
             AppLogger.LogDebug($"[F4103GenerationWindowViewModel] Target output directory ensured: '{destinationDir}'");
 
-            var seriesString = string.Join("_", amefs.Select(a => a.Series).Take(3));
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var seriesString = string.Join("_", amefs.Select(a => string.Concat((a.Series ?? "Fara_Serie").Select(c => invalidChars.Contains(c) ? '_' : c)).Trim()).Take(3));
             if (amefs.Count > 3) seriesString += $"_and_{amefs.Count - 3}_more";
 
             var xmlPath = Path.Combine(destinationDir, $"F4103_{seriesString}.xml");

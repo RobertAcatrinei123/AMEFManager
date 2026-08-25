@@ -12,36 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class AuthorizationWindowViewModel : ViewModelBase
+public partial class AuthorizationWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public AuthorizationUserControlViewModel AuthorizationUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public AuthorizationWindowViewModel()
-        : this(App.Services.GetRequiredService<AuthorizationService>())
-    {
-    }
-
     public AuthorizationWindowViewModel(AuthorizationService authorizationService)
+        : this(new AuthorizationUserControlViewModel(authorizationService))
     {
-        AuthorizationUserControlViewModel = new AuthorizationUserControlViewModel(authorizationService);
-        AuthorizationUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(AuthorizationUserControlViewModel.SelectedAuthorization))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public AuthorizationWindowViewModel(AuthorizationUserControlViewModel userControlViewModel)
     {
         AuthorizationUserControlViewModel = userControlViewModel;
-        AuthorizationUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(AuthorizationUserControlViewModel.SelectedAuthorization))
             {
@@ -50,6 +39,7 @@ public partial class AuthorizationWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        AuthorizationUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -118,5 +108,14 @@ public partial class AuthorizationWindowViewModel : ViewModelBase
         {
             AuthorizationUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AuthorizationUserControlViewModel.PropertyChanged -= _childHandler;
+        AuthorizationUserControlViewModel.Dispose();
     }
 }

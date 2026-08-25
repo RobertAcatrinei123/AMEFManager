@@ -11,18 +11,32 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class AddressUserControlViewModel : ViewModelBase
+public partial class AddressUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly AddressService _addressService;
     private List<Address> _allAddresses = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
 
-    public AddressUserControlViewModel(AddressService addressService)
+    public AddressUserControlViewModel(AddressService addressService, List<Address>? initialAddresses = null)
     {
         _addressService = addressService;
-        LoadAddressesCommand.Execute(null);
+        if (initialAddresses != null)
+        {
+            _allAddresses = initialAddresses;
+            ApplyFilter();
+        }
+        else
+        {
+            LoadAddressesCommand.Execute(null);
+        }
         _hasBeenFiltered = false;
+    }
+
+    public void SetAddresses(List<Address> addresses)
+    {
+        _allAddresses = addresses ?? [];
+        ApplyFilter();
     }
 
     [ObservableProperty]
@@ -281,5 +295,9 @@ public partial class AddressUserControlViewModel : ViewModelBase
         ClearSelectedAddress();
         await LoadAddressesAsync();
         AppLogger.LogInfo($"Address Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
     }
 }

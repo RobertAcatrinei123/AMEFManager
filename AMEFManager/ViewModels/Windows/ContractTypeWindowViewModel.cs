@@ -12,36 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class ContractTypeWindowViewModel : ViewModelBase
+public partial class ContractTypeWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public ContractTypeUserControlViewModel ContractTypeUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public ContractTypeWindowViewModel()
-        : this(App.Services.GetRequiredService<ContractTypeService>())
-    {
-    }
-
     public ContractTypeWindowViewModel(ContractTypeService contractTypeService)
+        : this(new ContractTypeUserControlViewModel(contractTypeService))
     {
-        ContractTypeUserControlViewModel = new ContractTypeUserControlViewModel(contractTypeService);
-        ContractTypeUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public ContractTypeWindowViewModel(ContractTypeUserControlViewModel userControlViewModel)
     {
         ContractTypeUserControlViewModel = userControlViewModel;
-        ContractTypeUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType))
             {
@@ -50,6 +39,7 @@ public partial class ContractTypeWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        ContractTypeUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -118,5 +108,14 @@ public partial class ContractTypeWindowViewModel : ViewModelBase
         {
             ContractTypeUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        ContractTypeUserControlViewModel.PropertyChanged -= _childHandler;
+        ContractTypeUserControlViewModel.Dispose();
     }
 }

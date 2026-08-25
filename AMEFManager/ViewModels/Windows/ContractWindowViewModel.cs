@@ -12,40 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class ContractWindowViewModel : ViewModelBase
+public partial class ContractWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public ContractUserControlViewModel ContractUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public ContractWindowViewModel()
-        : this(App.Services.GetRequiredService<ContractService>(),
-               App.Services.GetRequiredService<ContractTypeService>(),
-               App.Services.GetRequiredService<ClientService>(),
-               App.Services.GetRequiredService<AddressService>(),
-               App.Services.GetRequiredService<PersonService>())
-    {
-    }
-
     public ContractWindowViewModel(ContractService contractService, ContractTypeService contractTypeService, ClientService clientService, AddressService addressService, PersonService personService)
+        : this(new ContractUserControlViewModel(contractService, contractTypeService, clientService, addressService, personService))
     {
-        ContractUserControlViewModel = new ContractUserControlViewModel(contractService, contractTypeService, clientService, addressService, personService);
-        ContractUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public ContractWindowViewModel(ContractUserControlViewModel userControlViewModel)
     {
         ContractUserControlViewModel = userControlViewModel;
-        ContractUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract))
             {
@@ -54,6 +39,7 @@ public partial class ContractWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        ContractUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -122,5 +108,14 @@ public partial class ContractWindowViewModel : ViewModelBase
         {
             ContractUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        ContractUserControlViewModel.PropertyChanged -= _childHandler;
+        ContractUserControlViewModel.Dispose();
     }
 }

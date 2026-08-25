@@ -10,7 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class AmefMultiSelectUserControlViewModel : ViewModelBase
+public partial class AmefMultiSelectUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly AmefService _amefService;
     private List<Amef> _allAmefs = [];
@@ -123,5 +123,9 @@ public partial class AmefMultiSelectUserControlViewModel : ViewModelBase
             return Validator(SelectedAmefs);
         }
         return [];
+    }
+
+    public void Dispose()
+    {
     }
 }

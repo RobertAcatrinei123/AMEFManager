@@ -48,106 +48,114 @@ public partial class DocumentGenerationService
 
                 var root = dataDoc.DocumentElement;
 
-                using (FileStream templateStream = new FileStream(templatePdfPath, FileMode.Open, FileAccess.Read))
-                using (FileStream outputStream = new FileStream(outputPdfPath, FileMode.Create, FileAccess.Write))
+                using (FileStream templateStream = new FileStream(templatePdfPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (FileStream outputStream = new FileStream(outputPdfPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (PdfReader reader = new PdfReader(templateStream))
                 {
-                    PdfReader reader = new PdfReader(templateStream);
-
-                    // 1. DO NOT strip /Perms or call RemoveUsageRights().
-                    //    Append mode ('\0', true) preserves the Adobe Reader Extensions certificate.
-                    PdfStamper stamper = new PdfStamper(reader, outputStream, '\0', true);
-
-                    var xfa = stamper.AcroFields.Xfa;
-                    XmlDocument? xfaDom = xfa.DomDocument;
-                    XmlNode? datasetsNode = xfa.DatasetsNode;
-
-                    if (xfaDom == null)
-                        throw new InvalidOperationException("PDF template does not contain a valid XFA DomDocument.");
-
-                    if (datasetsNode == null)
+                    PdfStamper? stamper = null;
+                    try
                     {
-                        XmlNodeList nodes = xfaDom.GetElementsByTagName("xfa:datasets");
-                        if (nodes.Count > 0) datasetsNode = nodes[0]!;
-                    }
+                        // 1. DO NOT strip /Perms or call RemoveUsageRights().
+                        //    Append mode ('\0', true) preserves the Adobe Reader Extensions certificate.
+                        stamper = new PdfStamper(reader, outputStream, '\0', true);
 
-                    if (datasetsNode == null)
-                        throw new InvalidOperationException("DatasetsNode is null. Unable to locate XFA dataset node.");
+                        var xfa = stamper.AcroFields.Xfa;
+                        XmlDocument? xfaDom = xfa.DomDocument;
+                        XmlNode? datasetsNode = xfa.DatasetsNode;
 
-                    // 2. Locate or create <xfa:data>
-                    XmlNode? dataNode = null;
-                    foreach (XmlNode child in datasetsNode.ChildNodes)
-                    {
-                        if (child.Name == "xfa:data" || child.LocalName == "data")
+                        if (xfaDom == null)
+                            throw new InvalidOperationException("PDF template does not contain a valid XFA DomDocument.");
+
+                        if (datasetsNode == null)
                         {
-                            dataNode = child;
-                            break;
+                            XmlNodeList nodes = xfaDom.GetElementsByTagName("xfa:datasets");
+                            if (nodes.Count > 0) datasetsNode = nodes[0]!;
                         }
-                    }
 
-                    if (dataNode == null)
-                    {
-                        var newElem = xfaDom.CreateElement("xfa:data", "http://www.xfa.org/schema/xfa-data/1.0/");
-                        var dataNodeAttr = xfaDom.CreateAttribute("xfa", "dataNode", "http://www.xfa.org/schema/xfa-data/1.0/");
-                        dataNodeAttr.Value = "dataGroup";
-                        newElem.SetAttributeNode(dataNodeAttr);
-                        datasetsNode.AppendChild(newElem);
-                        dataNode = newElem;
-                    }
-                    else
-                    {
-                        if (dataNode is XmlElement existingDataElem && string.IsNullOrEmpty(existingDataElem.GetAttribute("xfa:dataNode")))
+                        if (datasetsNode == null)
+                            throw new InvalidOperationException("DatasetsNode is null. Unable to locate XFA dataset node.");
+
+                        // 2. Locate or create <xfa:data>
+                        XmlNode? dataNode = null;
+                        foreach (XmlNode child in datasetsNode.ChildNodes)
                         {
+                            if (child.Name == "xfa:data" || child.LocalName == "data")
+                            {
+                                dataNode = child;
+                                break;
+                            }
+                        }
+
+                        if (dataNode == null)
+                        {
+                            var newElem = xfaDom.CreateElement("xfa:data", "http://www.xfa.org/schema/xfa-data/1.0/");
                             var dataNodeAttr = xfaDom.CreateAttribute("xfa", "dataNode", "http://www.xfa.org/schema/xfa-data/1.0/");
                             dataNodeAttr.Value = "dataGroup";
-                            existingDataElem.SetAttributeNode(dataNodeAttr);
+                            newElem.SetAttributeNode(dataNodeAttr);
+                            datasetsNode.AppendChild(newElem);
+                            dataNode = newElem;
                         }
-                    }
-
-                    // 3. Inject XML nodes into <xfa:data>
-                    MergeData(dataNode, root, xfaDom);
-
-                    // 4. Serialize the updated datasets node
-                    byte[] datasetBytes = Encoding.UTF8.GetBytes(datasetsNode.OuterXml);
-                    PdfStream newDatasetsStream = new PdfStream(datasetBytes);
-
-                    // 5. Locate the indirect reference for 'datasets' inside the XFA packet array
-                    PdfDictionary catalog = reader.Catalog;
-                    PdfDictionary acroForm = catalog.GetAsDict(new PdfName("AcroForm"));
-                    if (acroForm != null)
-                    {
-                        PdfObject xfaObj = acroForm.Get(new PdfName("XFA"));
-                        if (xfaObj != null && xfaObj.IsArray())
+                        else
                         {
-                            PdfArray xfaArray = (PdfArray)xfaObj;
-                            int datasetsRefIndex = -1;
-
-                            for (int i = 0; i < xfaArray.Size; i += 2)
+                            if (dataNode is XmlElement existingDataElem && string.IsNullOrEmpty(existingDataElem.GetAttribute("xfa:dataNode")))
                             {
-                                PdfObject keyObj = xfaArray[i];
-                                if (keyObj is PdfString keyStr && string.Equals(keyStr.ToString(), "datasets", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    datasetsRefIndex = i + 1;
-                                    break;
-                                }
+                                var dataNodeAttr = xfaDom.CreateAttribute("xfa", "dataNode", "http://www.xfa.org/schema/xfa-data/1.0/");
+                                dataNodeAttr.Value = "dataGroup";
+                                existingDataElem.SetAttributeNode(dataNodeAttr);
                             }
+                        }
 
-                            if (datasetsRefIndex != -1)
+                        // 3. Inject XML nodes into <xfa:data>
+                        MergeData(dataNode, root, xfaDom);
+
+                        // 4. Serialize the updated datasets node
+                        byte[] datasetBytes = Encoding.UTF8.GetBytes(datasetsNode.OuterXml);
+                        PdfStream newDatasetsStream = new PdfStream(datasetBytes);
+
+                        // 5. Locate the indirect reference for 'datasets' inside the XFA packet array
+                        PdfDictionary catalog = reader.Catalog;
+                        PdfDictionary acroForm = catalog.GetAsDict(new PdfName("AcroForm"));
+                        if (acroForm != null)
+                        {
+                            PdfObject xfaObj = acroForm.Get(new PdfName("XFA"));
+                            if (xfaObj != null && xfaObj.IsArray())
                             {
-                                PdfObject targetObj = xfaArray[datasetsRefIndex];
-                                if (targetObj is PdfIndirectReference indRef)
+                                PdfArray xfaArray = (PdfArray)xfaObj;
+                                int datasetsRefIndex = -1;
+
+                                for (int i = 0; i < xfaArray.Size; i += 2)
                                 {
-                                    // Replace the indirect stream object in the incremental revision
-                                    stamper.Writer.AddToBody(newDatasetsStream, indRef.Number);
+                                    PdfObject keyObj = xfaArray[i];
+                                    if (keyObj is PdfString keyStr && string.Equals(keyStr.ToString(), "datasets", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        datasetsRefIndex = i + 1;
+                                        break;
+                                    }
+                                }
+
+                                if (datasetsRefIndex != -1)
+                                {
+                                    PdfObject targetObj = xfaArray[datasetsRefIndex];
+                                    if (targetObj is PdfIndirectReference indRef)
+                                    {
+                                        // Replace the indirect stream object in the incremental revision
+                                        stamper.Writer.AddToBody(newDatasetsStream, indRef.Number);
+                                    }
                                 }
                             }
                         }
+
+                        // 6. Keep Changed = false so iTextSharp does not collapse the 16-packet array
+                        stamper.AcroFields.Xfa.Changed = false;
+
+                        stamper.Close();
+                        stamper = null;
                     }
-
-                    // 6. Keep Changed = false so iTextSharp does not collapse the 16-packet array
-                    stamper.AcroFields.Xfa.Changed = false;
-
-                    stamper.Close();
-                    reader.Close();
+                    finally
+                    {
+                        try { stamper?.Close(); } catch { }
+                        try { reader.Close(); } catch { }
+                    }
                 }
 
                 stopwatch.Stop();
@@ -159,6 +167,14 @@ public partial class DocumentGenerationService
                 stopwatch.Stop();
                 AppLogger.Log($"[GeneratePdfAsync] EXCEPTION: {ex.Message}\n{ex.StackTrace}");
                 AppLogger.LogException(ex, "DocumentGenerationService.GeneratePdfAsync");
+                try
+                {
+                    if (File.Exists(outputPdfPath))
+                    {
+                        File.Delete(outputPdfPath);
+                    }
+                }
+                catch { }
                 throw;
             }
         });

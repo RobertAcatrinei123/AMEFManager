@@ -9,37 +9,44 @@ using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using System.ComponentModel;
+
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class ClientUserControlViewModel : ViewModelBase
+public partial class ClientUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly ClientService _clientService;
     private readonly AddressService _addressService;
     private readonly PersonService _personService;
+    private readonly PropertyChangedEventHandler _addressHandler;
+    private readonly PropertyChangedEventHandler _personHandler;
     private List<Client> _allClients = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
+    private bool _disposed;
 
     public AddressUserControlViewModel AddressUserControlViewModel { get; }
     public PersonUserControlViewModel PersonUserControlViewModel { get; }
 
-    public ClientUserControlViewModel(ClientService clientService, AddressService addressService, PersonService personService)
+    public ClientUserControlViewModel(ClientService clientService, AddressService addressService, PersonService personService, List<Address>? initialAddresses = null)
     {
         _clientService = clientService;
         _addressService = addressService;
-        AddressUserControlViewModel = new AddressUserControlViewModel(addressService)
+        _personService = personService;
+        AddressUserControlViewModel = new AddressUserControlViewModel(addressService, initialAddresses)
         {
             HeaderTitle = "Adresă Sediu Social Client"
         };
-        _personService = personService;
-        PersonUserControlViewModel = new PersonUserControlViewModel(_personService, addressService)
+        PersonUserControlViewModel = new PersonUserControlViewModel(_personService, addressService, initialAddresses)
         {
             HeaderTitle = "Date Reprezentant Legal Client"
         };
         PersonUserControlViewModel.AddressUserControlViewModel.HeaderTitle = "Adresă Domiciliu Reprezentant";
         
-        AddressUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
-        PersonUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(PersonUserControlViewModel.SelectedPerson) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _addressHandler = (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _personHandler = (s, e) => { if (e.PropertyName == nameof(PersonUserControlViewModel.SelectedPerson) && !_isUpdatingFromSelection) ApplyFilter(); };
+        AddressUserControlViewModel.PropertyChanged += _addressHandler;
+        PersonUserControlViewModel.PropertyChanged += _personHandler;
 
         LoadClientsCommand.Execute(null);
         _hasBeenFiltered = false;
@@ -315,5 +322,17 @@ public partial class ClientUserControlViewModel : ViewModelBase
         await AddressUserControlViewModel.LoadAddressesAsync();
         await PersonUserControlViewModel.LoadPersonsAsync();
         AppLogger.LogInfo($"Client Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AddressUserControlViewModel.PropertyChanged -= _addressHandler;
+        PersonUserControlViewModel.PropertyChanged -= _personHandler;
+
+        AddressUserControlViewModel.Dispose();
+        PersonUserControlViewModel.Dispose();
     }
 }

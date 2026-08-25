@@ -12,25 +12,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class DeliveryDocumentWindowViewModel : ViewModelBase
+public partial class DeliveryDocumentWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public DeliveryDocumentUserControlViewModel DeliveryDocumentUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
-
-    public DeliveryDocumentWindowViewModel()
-        : this(App.Services.GetRequiredService<DeliveryDocumentService>(),
-               App.Services.GetRequiredService<AmefService>(),
-               App.Services.GetRequiredService<BillService>(),
-               App.Services.GetRequiredService<AddressService>(),
-               App.Services.GetRequiredService<AuthorizationService>(),
-               App.Services.GetRequiredService<ContractService>(),
-               App.Services.GetRequiredService<ContractTypeService>(),
-               App.Services.GetRequiredService<ClientService>(),
-               App.Services.GetRequiredService<PersonService>())
-    {
-    }
 
     public DeliveryDocumentWindowViewModel(
         DeliveryDocumentService deliveryDocumentService,
@@ -42,24 +32,23 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
         ContractTypeService contractTypeService,
         ClientService clientService,
         PersonService personService)
+        : this(new DeliveryDocumentUserControlViewModel(
+            deliveryDocumentService,
+            amefService,
+            billService,
+            addressService,
+            authorizationService,
+            contractService,
+            contractTypeService,
+            clientService,
+            personService))
     {
-        DeliveryDocumentUserControlViewModel = new DeliveryDocumentUserControlViewModel(
-            deliveryDocumentService, amefService, billService, addressService, authorizationService, contractService, contractTypeService, clientService, personService);
-        DeliveryDocumentUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(DeliveryDocumentUserControlViewModel.SelectedDeliveryDocument))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public DeliveryDocumentWindowViewModel(DeliveryDocumentUserControlViewModel userControlViewModel)
     {
         DeliveryDocumentUserControlViewModel = userControlViewModel;
-        DeliveryDocumentUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(DeliveryDocumentUserControlViewModel.SelectedDeliveryDocument))
             {
@@ -68,6 +57,7 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        DeliveryDocumentUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -137,5 +127,14 @@ public partial class DeliveryDocumentWindowViewModel : ViewModelBase
         {
             DeliveryDocumentUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        DeliveryDocumentUserControlViewModel.PropertyChanged -= _childHandler;
+        DeliveryDocumentUserControlViewModel.Dispose();
     }
 }

@@ -47,7 +47,24 @@ public partial class F4102GenerationWindowViewModel : ViewModelBase
         if (!amefs.Any())
         {
             errors.Add("Cel putin un AMEF trebuie selectat.");
+            return errors;
         }
+
+        if (amefs.Any(a => a.Contract?.Client == null))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să fie asociate unui client valid (prin contract).");
+        }
+
+        if (amefs.Any(a => string.IsNullOrWhiteSpace(a.NUI)))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă un NUI valid completat.");
+        }
+
+        if (amefs.Any(a => string.IsNullOrWhiteSpace(a.Series)))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă o serie validă.");
+        }
+
         return errors;
     }
 
@@ -75,16 +92,38 @@ public partial class F4102GenerationWindowViewModel : ViewModelBase
                 return;
             }
 
+            var settings = _settingsService.GetSettings();
+
+            if (string.IsNullOrWhiteSpace(settings.Cui) || string.IsNullOrWhiteSpace(settings.NumeSocietate))
+            {
+                ErrorMessage = "Datele societății (CUI sau Denumire) nu sunt configurate în Setări.";
+                AppLogger.LogWarning("[F4102GenerationWindowViewModel] Company settings missing: CUI or NumeSocietate is empty.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.DenumireContabil) || string.IsNullOrWhiteSpace(settings.CnpContabil))
+            {
+                ErrorMessage = "Datele contabilului (Denumire sau CNP/CIF) nu sunt configurate în Setări.";
+                AppLogger.LogWarning("[F4102GenerationWindowViewModel] Accountant settings missing: DenumireContabil or CnpContabil is empty.");
+                return;
+            }
+
+            var invalidAmefs = amefs.Where(a => a.Contract?.Client == null).ToList();
+            if (invalidAmefs.Any())
+            {
+                ErrorMessage = "Toate AMEF-urile selectate trebuie să aibă un contract și un client valid asociat.";
+                AppLogger.LogWarning("[F4102GenerationWindowViewModel] Some selected AMEFs are missing contract or client.");
+                return;
+            }
+
             AppLogger.LogInfo($"[F4102GenerationWindowViewModel] Selection validation passed for {amefs.Count} AMEF(s).");
             
-            var clientGroups = amefs.Where(a => a.Contract?.Client != null).GroupBy(a => a.Contract.Client).ToList();
+            var clientGroups = amefs.GroupBy(a => a.Contract!.Client!).ToList();
             AppLogger.LogInfo($"[F4102GenerationWindowViewModel] Client grouping: found {clientGroups.Count} distinct client group(s) across {amefs.Count} selected AMEF(s).");
 
-            var settings = _settingsService.GetSettings();
-            
-            string rawCifSource = settings.Cui;
+            string rawCifSource = settings.Cui ?? string.Empty;
             string resolvedCompanyCif = rawCifSource.Replace("RO", "", StringComparison.OrdinalIgnoreCase).Trim();
-            string resolvedCompanyName = settings.NumeSocietate;
+            string resolvedCompanyName = settings.NumeSocietate ?? string.Empty;
 
             string cleanCui = System.Text.RegularExpressions.Regex.Replace(rawCifSource, @"[^\d]", "");
             long numericCif = long.TryParse(cleanCui, out long parsed) ? parsed : 0L;
@@ -105,14 +144,14 @@ public partial class F4102GenerationWindowViewModel : ViewModelBase
             f4102.CntFrm.DenDS = resolvedCompanyName;
             f4102.CntFrm.CheckD = 0;
             f4102.CntFrm.CheckS = 1;
-            f4102.CntFrm.EmailDS = settings.Email;
-            f4102.CntFrm.TelefonDS = settings.Telefon;
+            f4102.CntFrm.EmailDS = settings.Email ?? string.Empty;
+            f4102.CntFrm.TelefonDS = settings.Telefon ?? string.Empty;
             f4102.CntFrm.PrsInrg.CltP = 1;
             f4102.CntFrm.PrsInrg.RB = 1;
-            f4102.CntFrm.PrsInrg.DenPI = settings.DenumireContabil;
-            f4102.CntFrm.PrsInrg.CifPI = settings.CnpContabil;
-            f4102.CntFrm.PrsInrg.EmailPI = settings.EmailContabil;
-            f4102.CntFrm.PrsInrg.TelefonPI = settings.TelContabil;
+            f4102.CntFrm.PrsInrg.DenPI = settings.DenumireContabil ?? string.Empty;
+            f4102.CntFrm.PrsInrg.CifPI = settings.CnpContabil ?? string.Empty;
+            f4102.CntFrm.PrsInrg.EmailPI = settings.EmailContabil ?? string.Empty;
+            f4102.CntFrm.PrsInrg.TelefonPI = settings.TelContabil ?? string.Empty;
 
             AppLogger.LogInfo($"[F4102GenerationWindowViewModel] Header metadata populated: Luna_r={f4102.Antet.NumeDoc.LunaR}, An_r={f4102.Antet.NumeDoc.AnR}, TotalPlata_A={f4102.Antet.NumeDoc.TotalPlataA} (CIF={numericCif} + Groups={clientGroups.Count}), CIF='{f4102.CntFrm.Cif}', DenDS='{f4102.CntFrm.DenDS}', CheckD={f4102.CntFrm.CheckD}, CheckS={f4102.CntFrm.CheckS}");
 
@@ -181,11 +220,17 @@ public partial class F4102GenerationWindowViewModel : ViewModelBase
                 f4102.AmefUtl.Add(amefUtl);
             }
 
-            var destinationDir = Path.Combine(settings.ANAFDocumentsPath, "F4102", DateTime.Now.Month.ToString("D2"));
+            string anafBase = !string.IsNullOrWhiteSpace(settings.ANAFDocumentsPath)
+                ? settings.ANAFDocumentsPath
+                : (!string.IsNullOrWhiteSpace(settings.ServerPath)
+                    ? Path.Combine(settings.ServerPath, "ANAF")
+                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ANAF"));
+            var destinationDir = Path.Combine(anafBase, "F4102", DateTime.Now.Month.ToString("D2"));
             Directory.CreateDirectory(destinationDir);
             AppLogger.LogDebug($"[F4102GenerationWindowViewModel] Target output directory ensured: '{destinationDir}'");
 
-            var seriesString = string.Join("_", amefs.Select(a => a.Series).Take(3));
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var seriesString = string.Join("_", amefs.Select(a => string.Concat((a.Series ?? "Fara_Serie").Select(c => invalidChars.Contains(c) ? '_' : c)).Trim()).Take(3));
             if (amefs.Count > 3) seriesString += $"_and_{amefs.Count - 3}_more";
 
             var xmlPath = Path.Combine(destinationDir, $"F4102_{seriesString}.xml");

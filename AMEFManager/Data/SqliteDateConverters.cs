@@ -107,7 +107,7 @@ public static class DateParsingHelper
 public class DateOnlyConverter : ValueConverter<DateOnly, string>
 {
     public DateOnlyConverter() : base(
-        d => d.ToString("yyyy-MM-dd"),
+        d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         s => DateParsingHelper.ParseDateOnly(s))
     {
     }
@@ -116,7 +116,7 @@ public class DateOnlyConverter : ValueConverter<DateOnly, string>
 public class NullableDateOnlyConverter : ValueConverter<DateOnly?, string?>
 {
     public NullableDateOnlyConverter() : base(
-        d => d.HasValue ? d.Value.ToString("yyyy-MM-dd") : null,
+        d => d.HasValue ? d.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null,
         s => DateParsingHelper.ParseNullableDateOnly(s))
     {
     }
@@ -125,7 +125,7 @@ public class NullableDateOnlyConverter : ValueConverter<DateOnly?, string?>
 public class DateTimeConverter : ValueConverter<DateTime, string>
 {
     public DateTimeConverter() : base(
-        d => d.ToString("yyyy-MM-dd HH:mm:ss"),
+        d => d.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
         s => DateParsingHelper.ParseDateTime(s))
     {
     }
@@ -134,7 +134,7 @@ public class DateTimeConverter : ValueConverter<DateTime, string>
 public class NullableDateTimeConverter : ValueConverter<DateTime?, string?>
 {
     public NullableDateTimeConverter() : base(
-        d => d.HasValue ? d.Value.ToString("yyyy-MM-dd HH:mm:ss") : null,
+        d => d.HasValue ? d.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : null,
         s => DateParsingHelper.ParseNullableDateTime(s))
     {
     }

@@ -9,17 +9,26 @@ using AMEFManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using System.ComponentModel;
+
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class AmefUserControlViewModel : ViewModelBase
+public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly AmefService _amefService;
     private readonly BillService _billService;
     private readonly AddressService _addressService;
     private readonly AuthorizationService _authorizationService;
+    private readonly PropertyChangedEventHandler _contractHandler;
+    private readonly PropertyChangedEventHandler _clientHandler;
+    private readonly PropertyChangedEventHandler _contractTypeHandler;
+    private readonly PropertyChangedEventHandler _billHandler;
+    private readonly PropertyChangedEventHandler _authHandler;
+    private readonly PropertyChangedEventHandler _addressHandler;
     private List<Amef> _allAmefs = [];
     private bool _isUpdatingFromSelection;
     private bool _hasBeenFiltered;
+    private bool _disposed;
 
     public BillUserControlViewModel BillUserControlViewModel { get; }
     public AddressUserControlViewModel AddressUserControlViewModel { get; }
@@ -53,7 +62,8 @@ public partial class AmefUserControlViewModel : ViewModelBase
         {
             HeaderTitle = "Autorizație Distribuție AMEF"
         };
-        ContractUserControlViewModel = new ContractUserControlViewModel(contractService, contractTypeService, clientService, addressService, personService)
+        // Pass shared empty initial addresses to child contract/client/person to eliminate 3x duplicate address queries
+        ContractUserControlViewModel = new ContractUserControlViewModel(contractService, contractTypeService, clientService, addressService, personService, initialAddresses: [])
         {
             HeaderTitle = "Contract de Service AMEF"
         };
@@ -63,12 +73,31 @@ public partial class AmefUserControlViewModel : ViewModelBase
         ContractUserControlViewModel.ClientUserControlViewModel.PersonUserControlViewModel.HeaderTitle = "Date Reprezentant Legal Client";
         ContractUserControlViewModel.ClientUserControlViewModel.PersonUserControlViewModel.AddressUserControlViewModel.HeaderTitle = "Adresă Domiciliu Reprezentant";
         
-        ContractUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
-        ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
-        ContractUserControlViewModel.ContractTypeUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType) && !_isUpdatingFromSelection) ApplyFilter(); };
-        BillUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(BillUserControlViewModel.SelectedBill) && !_isUpdatingFromSelection) ApplyFilter(); };
-        AuthorizationUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AuthorizationUserControlViewModel.SelectedAuthorization) && !_isUpdatingFromSelection) ApplyFilter(); };
-        AddressUserControlViewModel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _contractHandler = (s, e) => { if (e.PropertyName == nameof(ContractUserControlViewModel.SelectedContract) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _clientHandler = (s, e) => { if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _contractTypeHandler = (s, e) => { if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _billHandler = (s, e) => { if (e.PropertyName == nameof(BillUserControlViewModel.SelectedBill) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _authHandler = (s, e) => { if (e.PropertyName == nameof(AuthorizationUserControlViewModel.SelectedAuthorization) && !_isUpdatingFromSelection) ApplyFilter(); };
+        _addressHandler = (s, e) =>
+        {
+            if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection)
+            {
+                ApplyFilter();
+            }
+            else if (e.PropertyName == nameof(AddressUserControlViewModel.FilteredAddresses))
+            {
+                var addrs = AddressUserControlViewModel.FilteredAddresses.ToList();
+                ContractUserControlViewModel.ClientUserControlViewModel.AddressUserControlViewModel.SetAddresses(addrs);
+                ContractUserControlViewModel.ClientUserControlViewModel.PersonUserControlViewModel.AddressUserControlViewModel.SetAddresses(addrs);
+            }
+        };
+
+        ContractUserControlViewModel.PropertyChanged += _contractHandler;
+        ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged += _clientHandler;
+        ContractUserControlViewModel.ContractTypeUserControlViewModel.PropertyChanged += _contractTypeHandler;
+        BillUserControlViewModel.PropertyChanged += _billHandler;
+        AuthorizationUserControlViewModel.PropertyChanged += _authHandler;
+        AddressUserControlViewModel.PropertyChanged += _addressHandler;
 
         LoadAmefsCommand.Execute(null);
         _hasBeenFiltered = false;
@@ -125,6 +154,10 @@ public partial class AmefUserControlViewModel : ViewModelBase
     {
         IsLoading = true;
         _allAmefs = await _amefService.FindAll();
+        var addrs = await _addressService.FindAll();
+        AddressUserControlViewModel.SetAddresses(addrs);
+        ContractUserControlViewModel.ClientUserControlViewModel.AddressUserControlViewModel.SetAddresses(addrs);
+        ContractUserControlViewModel.ClientUserControlViewModel.PersonUserControlViewModel.AddressUserControlViewModel.SetAddresses(addrs);
         ApplyFilter();
         IsLoading = false;
     }
@@ -384,5 +417,23 @@ public partial class AmefUserControlViewModel : ViewModelBase
         await AuthorizationUserControlViewModel.LoadAuthorizationsAsync();
         await ContractUserControlViewModel.LoadContractsAsync();
         AppLogger.LogInfo($"AMEF Id={toDelete.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        ContractUserControlViewModel.PropertyChanged -= _contractHandler;
+        ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged -= _clientHandler;
+        ContractUserControlViewModel.ContractTypeUserControlViewModel.PropertyChanged -= _contractTypeHandler;
+        BillUserControlViewModel.PropertyChanged -= _billHandler;
+        AuthorizationUserControlViewModel.PropertyChanged -= _authHandler;
+        AddressUserControlViewModel.PropertyChanged -= _addressHandler;
+
+        ContractUserControlViewModel.Dispose();
+        BillUserControlViewModel.Dispose();
+        AuthorizationUserControlViewModel.Dispose();
+        AddressUserControlViewModel.Dispose();
     }
 }

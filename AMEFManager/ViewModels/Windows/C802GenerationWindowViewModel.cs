@@ -47,6 +47,17 @@ public partial class C802GenerationWindowViewModel : ViewModelBase
         if (!amefs.Any())
         {
             errors.Add("Cel putin un AMEF trebuie selectat.");
+            return errors;
+        }
+
+        if (amefs.Any(a => string.IsNullOrWhiteSpace(a.NUI)))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă un NUI valid completat.");
+        }
+
+        if (amefs.Any(a => string.IsNullOrWhiteSpace(a.Series)))
+        {
+            errors.Add("Toate AMEF-urile selectate trebuie să aibă o serie validă.");
         }
 
         return errors;
@@ -76,12 +87,25 @@ public partial class C802GenerationWindowViewModel : ViewModelBase
                 return;
             }
 
+            var settings = _settingsService.GetSettings();
+            if (string.IsNullOrWhiteSpace(settings.Cui) || string.IsNullOrWhiteSpace(settings.NumeSocietate))
+            {
+                ErrorMessage = "Datele societății (CUI sau Denumire) nu sunt configurate în Setări.";
+                AppLogger.LogWarning("[C802GenerationWindowViewModel] Company settings missing: CUI or NumeSocietate is empty.");
+                return;
+            }
+
+            if (amefs.Any(a => string.IsNullOrWhiteSpace(a.NUI)))
+            {
+                ErrorMessage = "Toate AMEF-urile selectate trebuie să aibă un NUI valid completat.";
+                AppLogger.LogWarning("[C802GenerationWindowViewModel] AMEF missing valid NUI.");
+                return;
+            }
+
             AppLogger.LogInfo($"[C802GenerationWindowViewModel] Selection validation passed for {amefs.Count} AMEF(s).");
 
-            var settings = _settingsService.GetSettings();
             var nextId = await _c802DocumentService.GetNextNumberAsync();
-            var firstClient = amefs.FirstOrDefault(a => a.Contract?.Client != null)?.Contract.Client;
-            string cleanCif = settings.Cui.Replace("RO", "", StringComparison.OrdinalIgnoreCase).Trim() ?? string.Empty;
+            string cleanCif = (settings.Cui ?? string.Empty).Replace("RO", "", StringComparison.OrdinalIgnoreCase).Trim();
 
             var c802 = new C802Type
             {
@@ -90,7 +114,7 @@ public partial class C802GenerationWindowViewModel : ViewModelBase
                 Luna = DateTime.Now.Month,
                 TotalPlataA = amefs.Count,
                 Cif = cleanCif,
-                DenSolicitant = settings.NumeSocietate
+                DenSolicitant = settings.NumeSocietate ?? string.Empty
             };
 
             AppLogger.LogInfo($"[C802GenerationWindowViewModel] C802 model populated: IdSolicitare={c802.IdSolicitare}, An={c802.An}, Luna={c802.Luna}, TotalPlataA={c802.TotalPlataA}, CIF='{c802.Cif}', DenSolicitant='{c802.DenSolicitant}'");
@@ -105,11 +129,17 @@ public partial class C802GenerationWindowViewModel : ViewModelBase
                 });
             }
 
-            var destinationDir = Path.Combine(settings.ANAFDocumentsPath, "C802", DateTime.Now.Month.ToString("D2"));
+            string anafBase = !string.IsNullOrWhiteSpace(settings.ANAFDocumentsPath)
+                ? settings.ANAFDocumentsPath
+                : (!string.IsNullOrWhiteSpace(settings.ServerPath)
+                    ? Path.Combine(settings.ServerPath, "ANAF")
+                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ANAF"));
+            var destinationDir = Path.Combine(anafBase, "C802", DateTime.Now.Month.ToString("D2"));
             Directory.CreateDirectory(destinationDir);
             AppLogger.LogDebug($"[C802GenerationWindowViewModel] Target output directory ensured: '{destinationDir}'");
 
-            var seriesString = string.Join("_", amefs.Select(a => a.Series));
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var seriesString = string.Join("_", amefs.Select(a => string.Concat((a.Series ?? "Fara_Serie").Select(c => invalidChars.Contains(c) ? '_' : c)).Trim()));
             var xmlPath = Path.Combine(destinationDir, $"C802_{seriesString}.xml");
 
             if (File.Exists(xmlPath))

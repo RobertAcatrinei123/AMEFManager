@@ -43,31 +43,56 @@ public partial class DocumentGenerationService : IDocumentGenerationService
         {
             EnsureDirectoryExists(outputPath);
 
-            using (var reader = new PdfReader(templatePath))
-            using (var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+            try
             {
-                var stamper = new PdfStamper(reader, outputStream);
-                var form = stamper.AcroFields;
+                using (var reader = new PdfReader(templatePath))
+                using (var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    PdfStamper? stamper = null;
+                    try
+                    {
+                        stamper = new PdfStamper(reader, outputStream);
+                        var form = stamper.AcroFields;
 
-                string billDateStr = amef.Bill.BillDate.ToString("dd.MM.yyyy");
-                string deviceTypeStr = amef.GetDeviceType();
-                string modelStr = amef.Model ?? string.Empty;
-                string seriesStr = amef.Series ?? string.Empty;
-                string invoiceStr = $"{amef.Bill.BillSeries} {amef.Bill.BillNumber} / {billDateStr}";
+                        string billDateStr = amef.Bill.BillDate.ToString("dd.MM.yyyy");
+                        string deviceTypeStr = amef.GetDeviceType();
+                        string modelStr = amef.Model ?? string.Empty;
+                        string seriesStr = amef.Series ?? string.Empty;
+                        string invoiceStr = $"{amef.Bill.BillSeries} {amef.Bill.BillNumber} / {billDateStr}";
 
-                form.SetField("data", billDateStr);
-                form.SetField("tip", deviceTypeStr);
-                form.SetField("model", modelStr);
-                form.SetField("serie", seriesStr);
-                form.SetField("factura", invoiceStr);
+                        form.SetField("data", billDateStr);
+                        form.SetField("tip", deviceTypeStr);
+                        form.SetField("model", modelStr);
+                        form.SetField("serie", seriesStr);
+                        form.SetField("factura", invoiceStr);
 
-                stamper.FormFlattening = true;
-                stamper.Close();
-                reader.Close();
+                        stamper.FormFlattening = true;
+                        stamper.Close();
+                        stamper = null;
+                    }
+                    finally
+                    {
+                        try { stamper?.Close(); } catch { }
+                        try { reader.Close(); } catch { }
+                    }
+                }
+
+                AppLogger.LogInfo($"[DocumentGenerationService] Warranty PDF successfully generated at '{outputPath}'");
+                return outputPath;
             }
-
-            AppLogger.LogInfo($"[DocumentGenerationService] Warranty PDF successfully generated at '{outputPath}'");
-            return outputPath;
+            catch (Exception ex)
+            {
+                AppLogger.LogException(ex, "DocumentGenerationService.GenerateWarrantyAsync");
+                try
+                {
+                    if (File.Exists(outputPath))
+                    {
+                        File.Delete(outputPath);
+                    }
+                }
+                catch { }
+                throw;
+            }
         });
     }
 
@@ -87,35 +112,60 @@ public partial class DocumentGenerationService : IDocumentGenerationService
         {
             EnsureDirectoryExists(outputPath);
 
-            using (var reader = new PdfReader(templatePath))
-            using (var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+            try
             {
-                var stamper = new PdfStamper(reader, outputStream);
-                var form = stamper.AcroFields;
+                using (var reader = new PdfReader(templatePath))
+                using (var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    PdfStamper? stamper = null;
+                    try
+                    {
+                        stamper = new PdfStamper(reader, outputStream);
+                        var form = stamper.AcroFields;
 
-                var person = client.Person;
-                string repName = person != null ? $"{person.LastName} {person.FirstName}".Trim() : string.Empty;
-                string clientName = client.Name ?? string.Empty;
-                string regNumber = client.RegistrationNumber ?? string.Empty;
-                string cui = client.GetFormattedCui();
-                string modelStr = amef.Model ?? string.Empty;
-                string seriesStr = amef.Series ?? string.Empty;
+                        var person = client.Person;
+                        string repName = person != null ? $"{person.LastName} {person.FirstName}".Trim() : string.Empty;
+                        string clientName = client.Name ?? string.Empty;
+                        string regNumber = client.RegistrationNumber ?? string.Empty;
+                        string cui = client.GetFormattedCui();
+                        string modelStr = amef.Model ?? string.Empty;
+                        string seriesStr = amef.Series ?? string.Empty;
 
-                form.SetField("Societate1", clientName);
-                form.SetField("Societate2", clientName);
-                form.SetField("ORC", regNumber);
-                form.SetField("CUI", cui);
-                form.SetField("AMEF", modelStr);
-                form.SetField("Serie", seriesStr);
-                form.SetField("Nume", repName);
+                        form.SetField("Societate1", clientName);
+                        form.SetField("Societate2", clientName);
+                        form.SetField("ORC", regNumber);
+                        form.SetField("CUI", cui);
+                        form.SetField("AMEF", modelStr);
+                        form.SetField("Serie", seriesStr);
+                        form.SetField("Nume", repName);
 
-                stamper.FormFlattening = true;
-                stamper.Close();
-                reader.Close();
+                        stamper.FormFlattening = true;
+                        stamper.Close();
+                        stamper = null;
+                    }
+                    finally
+                    {
+                        try { stamper?.Close(); } catch { }
+                        try { reader.Close(); } catch { }
+                    }
+                }
+
+                AppLogger.LogInfo($"[DocumentGenerationService] Training sheet PDF successfully generated at '{outputPath}'");
+                return outputPath;
             }
-
-            AppLogger.LogInfo($"[DocumentGenerationService] Training sheet PDF successfully generated at '{outputPath}'");
-            return outputPath;
+            catch (Exception ex)
+            {
+                AppLogger.LogException(ex, "DocumentGenerationService.GenerateTrainingSheetAsync");
+                try
+                {
+                    if (File.Exists(outputPath))
+                    {
+                        File.Delete(outputPath);
+                    }
+                }
+                catch { }
+                throw;
+            }
         });
     }
 }

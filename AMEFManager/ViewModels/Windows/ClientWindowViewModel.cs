@@ -12,38 +12,25 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class ClientWindowViewModel : ViewModelBase
+public partial class ClientWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public ClientUserControlViewModel ClientUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
 
-    public ClientWindowViewModel()
-        : this(App.Services.GetRequiredService<ClientService>(),
-               App.Services.GetRequiredService<AddressService>(),
-               App.Services.GetRequiredService<PersonService>())
-    {
-    }
-
     public ClientWindowViewModel(ClientService clientService, AddressService addressService, PersonService personService)
+        : this(new ClientUserControlViewModel(clientService, addressService, personService))
     {
-        ClientUserControlViewModel = new ClientUserControlViewModel(clientService, addressService, personService);
-        ClientUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public ClientWindowViewModel(ClientUserControlViewModel userControlViewModel)
     {
         ClientUserControlViewModel = userControlViewModel;
-        ClientUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(ClientUserControlViewModel.SelectedClient))
             {
@@ -52,6 +39,7 @@ public partial class ClientWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        ClientUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -120,5 +108,14 @@ public partial class ClientWindowViewModel : ViewModelBase
         {
             ClientUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        ClientUserControlViewModel.PropertyChanged -= _childHandler;
+        ClientUserControlViewModel.Dispose();
     }
 }

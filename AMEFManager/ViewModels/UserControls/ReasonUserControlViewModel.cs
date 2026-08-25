@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AMEFManager.ViewModels.UserControls;
 
-public partial class ReasonUserControlViewModel : ViewModelBase
+public partial class ReasonUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly ReasonService _reasonService;
     private List<Reason> _allReasons = [];
@@ -210,5 +210,9 @@ public partial class ReasonUserControlViewModel : ViewModelBase
         ClearSelectedReason();
         await LoadReasonsAsync();
         AppLogger.LogInfo($"Reason Id={selected.Id} deleted successfully.");
+    }
+
+    public void Dispose()
+    {
     }
 }

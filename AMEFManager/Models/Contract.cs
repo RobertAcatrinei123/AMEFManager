@@ -13,7 +13,7 @@ public class Contract
     public ContractType Type { get; set; } = null!;
     
     public bool IsActive { get; set; }
-    public required DateTime ValidUntil { get; set; }
+    public required DateOnly ValidUntil { get; set; }
     
     public int ClientId { get; set; }
     public Client Client { get; set; } = null!;

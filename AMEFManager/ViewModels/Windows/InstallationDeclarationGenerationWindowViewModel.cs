@@ -15,12 +15,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class InstallationDeclarationGenerationWindowViewModel : ViewModelBase
+public partial class InstallationDeclarationGenerationWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly AmefService _amefService;
     private readonly DocumentGenerationService _documentGenerationService;
     private readonly SettingsService _settingsService;
-    private readonly ReasonService? _reasonService;
+    private readonly ReasonService _reasonService;
+    private bool _disposed;
 
     public AmefMultiSelectUserControlViewModel AmefMultiSelectUserControlViewModel { get; }
 
@@ -36,12 +37,12 @@ public partial class InstallationDeclarationGenerationWindowViewModel : ViewMode
         AmefService amefService,
         DocumentGenerationService documentGenerationService,
         SettingsService settingsService,
-        ReasonService? reasonService = null)
+        ReasonService reasonService)
     {
         _amefService = amefService;
         _documentGenerationService = documentGenerationService;
         _settingsService = settingsService;
-        _reasonService = reasonService ?? App.Services?.GetService<ReasonService>();
+        _reasonService = reasonService;
 
         AmefMultiSelectUserControlViewModel = new AmefMultiSelectUserControlViewModel(amefService);
         AmefMultiSelectUserControlViewModel.Validator = ValidateAmefs;
@@ -52,17 +53,14 @@ public partial class InstallationDeclarationGenerationWindowViewModel : ViewMode
     [RelayCommand]
     public async Task LoadReasonsAsync()
     {
-        if (_reasonService != null)
+        try
         {
-            try
-            {
-                var reasonsList = await _reasonService.FindAll();
-                Reasons = new ObservableCollection<Reason>(reasonsList.OrderBy(r => r.Text));
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogWarning($"[InstallationDeclarationGenerationWindowViewModel] Failed to load reasons: {ex.Message}");
-            }
+            var reasonsList = await _reasonService.FindAll();
+            Reasons = new ObservableCollection<Reason>(reasonsList.OrderBy(r => r.Text));
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogWarning($"[InstallationDeclarationGenerationWindowViewModel] Failed to load reasons: {ex.Message}");
         }
     }
 
@@ -179,5 +177,13 @@ public partial class InstallationDeclarationGenerationWindowViewModel : ViewMode
     private void ClearSelectedReason()
     {
         SelectedReason = null;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AmefMultiSelectUserControlViewModel.Dispose();
     }
 }

@@ -12,24 +12,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AMEFManager.ViewModels.Windows;
 
-public partial class AmefWindowViewModel : ViewModelBase
+public partial class AmefWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly PropertyChangedEventHandler _childHandler;
+    private bool _disposed;
+
     public AmefUserControlViewModel AmefUserControlViewModel { get; }
 
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
-
-    public AmefWindowViewModel()
-        : this(App.Services.GetRequiredService<AmefService>(),
-               App.Services.GetRequiredService<BillService>(),
-               App.Services.GetRequiredService<AddressService>(),
-               App.Services.GetRequiredService<AuthorizationService>(),
-               App.Services.GetRequiredService<ContractService>(),
-               App.Services.GetRequiredService<ContractTypeService>(),
-               App.Services.GetRequiredService<ClientService>(),
-               App.Services.GetRequiredService<PersonService>())
-    {
-    }
 
     public AmefWindowViewModel(
         AmefService amefService,
@@ -40,24 +31,22 @@ public partial class AmefWindowViewModel : ViewModelBase
         ContractTypeService contractTypeService,
         ClientService clientService,
         PersonService personService)
+        : this(new AmefUserControlViewModel(
+            amefService,
+            billService,
+            addressService,
+            authorizationService,
+            contractService,
+            contractTypeService,
+            clientService,
+            personService))
     {
-        AmefUserControlViewModel = new AmefUserControlViewModel(
-            amefService, billService, addressService, authorizationService, contractService, contractTypeService, clientService, personService);
-        AmefUserControlViewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(AmefUserControlViewModel.SelectedAmef))
-            {
-                StatusMessage = null;
-                ErrorMessage = null;
-                DeleteCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
     public AmefWindowViewModel(AmefUserControlViewModel userControlViewModel)
     {
         AmefUserControlViewModel = userControlViewModel;
-        AmefUserControlViewModel.PropertyChanged += (s, e) =>
+        _childHandler = (s, e) =>
         {
             if (e.PropertyName == nameof(AmefUserControlViewModel.SelectedAmef))
             {
@@ -66,6 +55,7 @@ public partial class AmefWindowViewModel : ViewModelBase
                 DeleteCommand.NotifyCanExecuteChanged();
             }
         };
+        AmefUserControlViewModel.PropertyChanged += _childHandler;
     }
 
     [RelayCommand]
@@ -134,5 +124,14 @@ public partial class AmefWindowViewModel : ViewModelBase
         {
             AmefUserControlViewModel.IsLoading = false;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        AmefUserControlViewModel.PropertyChanged -= _childHandler;
+        AmefUserControlViewModel.Dispose();
     }
 }
