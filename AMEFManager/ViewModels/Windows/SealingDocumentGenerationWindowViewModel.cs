@@ -100,7 +100,7 @@ public partial class SealingDocumentGenerationWindowViewModel : ViewModelBase, I
                 if (existing != null)
                 {
                     DocumentNumber = existing.Number;
-                    DocumentDate = new DateTimeOffset(existing.Date.ToDateTime(TimeOnly.MinValue));
+                    DocumentDate = DateHelper.ToDateTimeOffset(existing.Date);
                 }
                 else
                 {

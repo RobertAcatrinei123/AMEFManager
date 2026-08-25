@@ -114,7 +114,7 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase, IDisposa
             else
             {
                 Number = value.Number;
-                Date = new DateTimeOffset(value.Date.ToDateTime(TimeOnly.MinValue));
+                Date = DateHelper.ToDateTimeOffset(value.Date);
                 Model = value.Model;
                 Brand = value.Brand;
                 DeviceType = value.DeviceType;

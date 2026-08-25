@@ -120,7 +120,7 @@ public partial class DeliveryDocumentUserControlViewModel : ViewModelBase, IDisp
             else
             {
                 Number = value.Number;
-                Date = new DateTimeOffset(value.Date.ToDateTime(TimeOnly.MinValue));
+                Date = DateHelper.ToDateTimeOffset(value.Date);
 
                 AmefUserControlViewModel.SelectedAmef = AmefUserControlViewModel.FilteredAmefs.FirstOrDefault(a => a.Id == value.AmefId);
             }

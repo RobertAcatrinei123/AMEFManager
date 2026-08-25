@@ -81,7 +81,7 @@ public partial class DocumentGenerationService
             { "{{clientName}}", client?.Name ?? string.Empty },
             { "{{address}}", address?.GetFullAddress() ?? string.Empty },
             { "{{cui}}", client?.GetFormattedCui() ?? string.Empty },
-            { "{{fiscalizationDate}}", amef.FiscalizationDate.ToString("dd.MM.yyyy") },
+            { "{{fiscalizationDate}}", amef.FiscalizationDate.HasValue && amef.FiscalizationDate.Value != default ? amef.FiscalizationDate.Value.ToString("dd.MM.yyyy") : string.Empty },
             { "{{amefAddress}}", amef.Address?.GetFullAddress() ?? string.Empty },
             { "{{amefType}}", amef.GetDeviceType() },
             { "{{amefModel}}", amef.Model ?? string.Empty },

@@ -113,7 +113,7 @@ public partial class AdditionalDocumentUserControlViewModel : ViewModelBase, IDi
             else
             {
                 Number = value.Number;
-                Date = new DateTimeOffset(value.Date.ToDateTime(TimeOnly.MinValue));
+                Date = DateHelper.ToDateTimeOffset(value.Date);
 
                 var matchingContract = ContractUserControlViewModel.FilteredContracts
                     .FirstOrDefault(c => c.Id == value.ContractId);

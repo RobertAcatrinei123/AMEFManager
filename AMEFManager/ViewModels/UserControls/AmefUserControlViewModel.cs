@@ -62,8 +62,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
         {
             HeaderTitle = "Autorizație Distribuție AMEF"
         };
-        // Pass shared empty initial addresses to child contract/client/person to eliminate 3x duplicate address queries
-        ContractUserControlViewModel = new ContractUserControlViewModel(contractService, contractTypeService, clientService, addressService, personService, initialAddresses: [])
+        ContractUserControlViewModel = new ContractUserControlViewModel(contractService, contractTypeService, clientService, addressService, personService)
         {
             HeaderTitle = "Contract de Service AMEF"
         };
@@ -78,19 +77,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
         _contractTypeHandler = (s, e) => { if (e.PropertyName == nameof(ContractTypeUserControlViewModel.SelectedContractType) && !_isUpdatingFromSelection) ApplyFilter(); };
         _billHandler = (s, e) => { if (e.PropertyName == nameof(BillUserControlViewModel.SelectedBill) && !_isUpdatingFromSelection) ApplyFilter(); };
         _authHandler = (s, e) => { if (e.PropertyName == nameof(AuthorizationUserControlViewModel.SelectedAuthorization) && !_isUpdatingFromSelection) ApplyFilter(); };
-        _addressHandler = (s, e) =>
-        {
-            if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection)
-            {
-                ApplyFilter();
-            }
-            else if (e.PropertyName == nameof(AddressUserControlViewModel.FilteredAddresses))
-            {
-                var addrs = AddressUserControlViewModel.FilteredAddresses.ToList();
-                ContractUserControlViewModel.ClientUserControlViewModel.AddressUserControlViewModel.SetAddresses(addrs);
-                ContractUserControlViewModel.ClientUserControlViewModel.PersonUserControlViewModel.AddressUserControlViewModel.SetAddresses(addrs);
-            }
-        };
+        _addressHandler = (s, e) => { if (e.PropertyName == nameof(AddressUserControlViewModel.SelectedAddress) && !_isUpdatingFromSelection) ApplyFilter(); };
 
         ContractUserControlViewModel.PropertyChanged += _contractHandler;
         ContractUserControlViewModel.ClientUserControlViewModel.PropertyChanged += _clientHandler;
@@ -197,17 +184,21 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
                 Series = value.Series;
                 Nui = value.NUI;
                 FiscalCity = value.FiscalCity;
-                FiscalizationDate = new DateTimeOffset(value.FiscalizationDate.ToDateTime(TimeOnly.MinValue));
+                FiscalizationDate = DateHelper.ToDateTimeOffset(value.FiscalizationDate);
                 ConnectionMethod = value.ConnectionMethod;
-                ConnectionExpirationDate = value.ConnectionExpirationDate.HasValue 
-                    ? new DateTimeOffset(value.ConnectionExpirationDate.Value.ToDateTime(TimeOnly.MinValue)) 
-                    : null;
+                ConnectionExpirationDate = DateHelper.ToDateTimeOffset(value.ConnectionExpirationDate);
                 ServicePassword = value.ServicePassword;
 
-                BillUserControlViewModel.SelectedBill = BillUserControlViewModel.FilteredBills.FirstOrDefault(b => b.Id == value.BillId);
-                AddressUserControlViewModel.SelectedAddress = AddressUserControlViewModel.FilteredAddresses.FirstOrDefault(a => a.Id == value.AddressId);
-                AuthorizationUserControlViewModel.SelectedAuthorization = AuthorizationUserControlViewModel.FilteredAuthorizations.FirstOrDefault(a => a.Id == value.AuthorizationId);
-                ContractUserControlViewModel.SelectedContract = ContractUserControlViewModel.FilteredContracts.FirstOrDefault(c => c.Id == value.ContractId);
+                BillUserControlViewModel.SelectedBill = value.BillId.HasValue 
+                    ? BillUserControlViewModel.FilteredBills.FirstOrDefault(b => b.Id == value.BillId.Value) ?? value.Bill
+                    : null;
+                AddressUserControlViewModel.SelectedAddress = value.AddressId.HasValue 
+                    ? AddressUserControlViewModel.FilteredAddresses.FirstOrDefault(a => a.Id == value.AddressId.Value) ?? value.Address
+                    : null;
+                AuthorizationUserControlViewModel.SelectedAuthorization = AuthorizationUserControlViewModel.FilteredAuthorizations.FirstOrDefault(a => a.Id == value.AuthorizationId) ?? value.Authorization;
+                ContractUserControlViewModel.SelectedContract = value.ContractId.HasValue 
+                    ? ContractUserControlViewModel.FilteredContracts.FirstOrDefault(c => c.Id == value.ContractId.Value) ?? value.Contract
+                    : null;
             }
         }
         finally
@@ -237,7 +228,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
         _hasBeenFiltered = true;
         try
         {
-                    var selectedContract = ContractUserControlViewModel.SelectedContract;
+            var selectedContract = ContractUserControlViewModel.SelectedContract;
             var selectedClient = ContractUserControlViewModel.ClientUserControlViewModel.SelectedClient;
             var selectedContractType = ContractUserControlViewModel.ContractTypeUserControlViewModel.SelectedContractType;
             var selectedBill = BillUserControlViewModel.SelectedBill;
@@ -277,14 +268,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(Series)) errors.Add("Seria este obligatorie.");
-        if (string.IsNullOrWhiteSpace(Nui)) errors.Add("NUI este obligatoriu.");
-        if (string.IsNullOrWhiteSpace(FiscalCity)) errors.Add("Orasul fiscal este obligatoriu.");
-        if (FiscalizationDate is null) errors.Add("Data fiscalizarii este obligatorie.");
-
-        errors.AddRange(ContractUserControlViewModel.Validate());
         errors.AddRange(AuthorizationUserControlViewModel.Validate());
-        errors.AddRange(BillUserControlViewModel.Validate());
-        errors.AddRange(AddressUserControlViewModel.Validate());
 
         return errors;
     }
@@ -296,12 +280,13 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
             return new Amef
             {
                 Series = Series!,
-                NUI = Nui!,
-                FiscalCity = FiscalCity!,
-                FiscalizationDate = DateOnly.FromDateTime(FiscalizationDate!.Value.DateTime),
+                NUI = Nui,
+                FiscalCity = FiscalCity,
+                FiscalizationDate = DateHelper.ToDateOnly(FiscalizationDate),
                 ConnectionMethod = ConnectionMethod,
-                ConnectionExpirationDate = ConnectionExpirationDate.HasValue ? DateOnly.FromDateTime(ConnectionExpirationDate.Value.DateTime) : null,
-                ServicePassword = ServicePassword
+                ConnectionExpirationDate = DateHelper.ToDateOnly(ConnectionExpirationDate),
+                ServicePassword = ServicePassword,
+                AuthorizationId = AuthorizationUserControlViewModel.SelectedAuthorization?.Id ?? 0
             };
         }
         return SelectedAmef;
@@ -309,48 +294,70 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
 
     public async Task<Amef> SaveAmefAsync()
     {
-        var address = await AddressUserControlViewModel.SaveAddressAsync();
-        var savedBill = await BillUserControlViewModel.SaveBillAsync();
         var savedAuth = await AuthorizationUserControlViewModel.SaveAuthorizationAsync();
-        var savedContract = await ContractUserControlViewModel.SaveContractAsync();
+
+        Address? address = null;
+        if (AddressUserControlViewModel.SelectedAddress != null || AddressUserControlViewModel.Validate().Count == 0)
+        {
+            address = await AddressUserControlViewModel.SaveAddressAsync();
+        }
+
+        Bill? savedBill = null;
+        if (BillUserControlViewModel.SelectedBill != null || BillUserControlViewModel.Validate().Count == 0)
+        {
+            savedBill = await BillUserControlViewModel.SaveBillAsync();
+        }
+
+        Contract? savedContract = null;
+        if (ContractUserControlViewModel.SelectedContract != null || ContractUserControlViewModel.Validate().Count == 0)
+        {
+            savedContract = await ContractUserControlViewModel.SaveContractAsync();
+        }
 
         Amef savedAmef;
         if (SelectedAmef is null)
         {
-            var existing = await _amefService.FindByNui(Nui!) ?? await _amefService.FindBySeries(Series!);
+            Amef? existing = null;
+            if (!string.IsNullOrWhiteSpace(Nui))
+            {
+                existing = await _amefService.FindByNui(Nui);
+            }
+            if (existing == null && !string.IsNullOrWhiteSpace(Series))
+            {
+                existing = await _amefService.FindBySeries(Series);
+            }
+
             if (existing != null)
             {
                 savedAmef = existing;
                 savedAmef.Series = Series!;
-                savedAmef.NUI = Nui!;
-                savedAmef.FiscalCity = FiscalCity!;
-                savedAmef.FiscalizationDate = DateOnly.FromDateTime(FiscalizationDate!.Value.DateTime);
+                savedAmef.NUI = Nui;
+                savedAmef.FiscalCity = FiscalCity;
+                savedAmef.FiscalizationDate = DateHelper.ToDateOnly(FiscalizationDate);
                 savedAmef.ConnectionMethod = ConnectionMethod;
-                savedAmef.ConnectionExpirationDate = ConnectionExpirationDate.HasValue
-                    ? DateOnly.FromDateTime(ConnectionExpirationDate.Value.DateTime)
-                    : null;
+                savedAmef.ConnectionExpirationDate = DateHelper.ToDateOnly(ConnectionExpirationDate);
                 savedAmef.ServicePassword = ServicePassword;
                 savedAmef.Address = address;
-                savedAmef.AddressId = address.Id;
+                savedAmef.AddressId = address?.Id;
                 savedAmef.Bill = savedBill;
-                savedAmef.BillId = savedBill.Id;
+                savedAmef.BillId = savedBill?.Id;
                 savedAmef.Authorization = savedAuth;
                 savedAmef.AuthorizationId = savedAuth.Id;
                 savedAmef.Contract = savedContract;
-                savedAmef.ContractId = savedContract.Id;
+                savedAmef.ContractId = savedContract?.Id;
                 await _amefService.Update(savedAmef);
             }
             else
             {
                 savedAmef = GetSelectedAmef();
                 savedAmef.Address = address;
-                savedAmef.AddressId = address.Id;
+                savedAmef.AddressId = address?.Id;
                 savedAmef.Bill = savedBill;
-                savedAmef.BillId = savedBill.Id;
+                savedAmef.BillId = savedBill?.Id;
                 savedAmef.Authorization = savedAuth;
                 savedAmef.AuthorizationId = savedAuth.Id;
                 savedAmef.Contract = savedContract;
-                savedAmef.ContractId = savedContract.Id;
+                savedAmef.ContractId = savedContract?.Id;
                 await _amefService.Add(savedAmef);
             }
         }
@@ -358,22 +365,20 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
         {
             savedAmef = SelectedAmef;
             savedAmef.Series = Series!;
-            savedAmef.NUI = Nui!;
-            savedAmef.FiscalCity = FiscalCity!;
-            savedAmef.FiscalizationDate = DateOnly.FromDateTime(FiscalizationDate!.Value.DateTime);
+            savedAmef.NUI = Nui;
+            savedAmef.FiscalCity = FiscalCity;
+            savedAmef.FiscalizationDate = DateHelper.ToDateOnly(FiscalizationDate);
             savedAmef.ConnectionMethod = ConnectionMethod;
-            savedAmef.ConnectionExpirationDate = ConnectionExpirationDate.HasValue
-                ? DateOnly.FromDateTime(ConnectionExpirationDate.Value.DateTime)
-                : null;
+            savedAmef.ConnectionExpirationDate = DateHelper.ToDateOnly(ConnectionExpirationDate);
             savedAmef.ServicePassword = ServicePassword;
             savedAmef.Address = address;
-            savedAmef.AddressId = address.Id;
+            savedAmef.AddressId = address?.Id;
             savedAmef.Bill = savedBill;
-            savedAmef.BillId = savedBill.Id;
+            savedAmef.BillId = savedBill?.Id;
             savedAmef.Authorization = savedAuth;
             savedAmef.AuthorizationId = savedAuth.Id;
             savedAmef.Contract = savedContract;
-            savedAmef.ContractId = savedContract.Id;
+            savedAmef.ContractId = savedContract?.Id;
             await _amefService.Update(savedAmef);
         }
 
@@ -392,8 +397,8 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
         var toDelete = SelectedAmef;
         AppLogger.LogInfo($"Deleting AMEF: Id={toDelete.Id}, NUI={toDelete.NUI}, Series={toDelete.Series}");
 
-        var address = toDelete.Address ?? (toDelete.AddressId > 0 ? await _addressService.FindById(toDelete.AddressId) : null);
-        var bill = toDelete.Bill ?? (toDelete.BillId > 0 ? await _billService.FindById(toDelete.BillId) : null);
+        var address = toDelete.Address ?? (toDelete.AddressId.HasValue && toDelete.AddressId.Value > 0 ? await _addressService.FindById(toDelete.AddressId.Value) : null);
+        var bill = toDelete.Bill ?? (toDelete.BillId.HasValue && toDelete.BillId.Value > 0 ? await _billService.FindById(toDelete.BillId.Value) : null);
         var auth = toDelete.Authorization ?? (toDelete.AuthorizationId > 0 ? await _authorizationService.FindById(toDelete.AuthorizationId) : null);
 
         await _amefService.Delete(toDelete);

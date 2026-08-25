@@ -148,9 +148,9 @@ public partial class ContractUserControlViewModel : ViewModelBase, IDisposable
             else
             {
                 Number = value.Number;
-                Date = new DateTimeOffset(value.Date.ToDateTime(TimeOnly.MinValue));
+                Date = DateHelper.ToDateTimeOffset(value.Date);
                 IsActive = value.IsActive;
-                ValidUntil = new DateTimeOffset(value.ValidUntil.ToDateTime(TimeOnly.MinValue));
+                ValidUntil = DateHelper.ToDateTimeOffset(value.ValidUntil);
 
                 var matchingType = ContractTypeUserControlViewModel.FilteredContractTypes
                     .FirstOrDefault(t => t.Id == value.ContractTypeId);

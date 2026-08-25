@@ -21,9 +21,9 @@ public partial class AddressUserControlViewModel : ViewModelBase, IDisposable
     public AddressUserControlViewModel(AddressService addressService, List<Address>? initialAddresses = null)
     {
         _addressService = addressService;
-        if (initialAddresses != null)
+        if (initialAddresses != null && initialAddresses.Count > 0)
         {
-            _allAddresses = initialAddresses;
+            _allAddresses = new List<Address>(initialAddresses);
             ApplyFilter();
         }
         else
@@ -35,7 +35,7 @@ public partial class AddressUserControlViewModel : ViewModelBase, IDisposable
 
     public void SetAddresses(List<Address> addresses)
     {
-        _allAddresses = addresses ?? [];
+        _allAddresses = addresses != null ? new List<Address>(addresses) : [];
         ApplyFilter();
     }
 

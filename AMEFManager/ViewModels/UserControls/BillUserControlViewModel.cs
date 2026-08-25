@@ -98,7 +98,7 @@ public partial class BillUserControlViewModel : ViewModelBase, IDisposable
             }
             else
             {
-                BillDate = new DateTimeOffset(value.BillDate.ToDateTime(TimeOnly.MinValue));
+                BillDate = DateHelper.ToDateTimeOffset(value.BillDate);
                 BillSeries = value.BillSeries;
                 BillNumber = value.BillNumber;
             }

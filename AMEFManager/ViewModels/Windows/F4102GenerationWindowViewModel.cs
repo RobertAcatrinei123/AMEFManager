@@ -176,7 +176,7 @@ public partial class F4102GenerationWindowViewModel : ViewModelBase
                 int amefIndex = 1;
                 foreach (var a in clientGroup)
                 {
-                    string formattedDate = a.FiscalizationDate != default ? a.FiscalizationDate.ToString("dd.MM.yyyy") : string.Empty;
+                    string formattedDate = a.FiscalizationDate.HasValue && a.FiscalizationDate.Value != default ? a.FiscalizationDate.Value.ToString("dd.MM.yyyy") : string.Empty;
                     string city = a.Address?.City ?? string.Empty;
                     string street = a.Address?.Street ?? string.Empty;
                     string streetNr = a.Address?.StreetNumber ?? string.Empty;

@@ -158,7 +158,7 @@ public partial class PersonUserControlViewModel : ViewModelBase, IDisposable
                 Series = value.Series;
                 Number = value.Number;
                 Issuer = value.Issuer;
-                IssuingDate = new DateTimeOffset(value.IssuingDate.ToDateTime(TimeOnly.MinValue));
+                IssuingDate = DateHelper.ToDateTimeOffset(value.IssuingDate);
                 Role = value.Role;
 
                 var matchingAddress = AddressUserControlViewModel.FilteredAddresses
