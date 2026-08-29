@@ -211,11 +211,11 @@ public partial class DocumentGenerationService : IDocumentGenerationService
         // Header Row
         var headerRow = new TableRow();
         headerRow.Append(
-            CreateTableCell("Nr. crt.", isHeader: true, widthPct: 800),
-            CreateTableCell("Tipul si modelul AMEF", isHeader: true, widthPct: 1800),
-            CreateTableCell("Seria de fabricatie", isHeader: true, widthPct: 1500),
-            CreateTableCell("Adresa de lucru (locatia) AMEF", isHeader: true, widthPct: 2900),
-            CreateTableCell($"Tarif/AMEF/{frequency}", isHeader: true, widthPct: 1000)
+            CreateTableCell("Nr. crt.", isHeader: true, widthPct: 300),
+            CreateTableCell("Tipul si modelul AMEF", isHeader: true, widthPct: 1050),
+            CreateTableCell("Seria de fabricatie", isHeader: true, widthPct: 800),
+            CreateTableCell("Adresa de lucru (locatia) AMEF", isHeader: true, widthPct: 2250),
+            CreateTableCell($"Tarif/AMEF/{frequency}", isHeader: true, widthPct: 600)
         );
         table.AppendChild(headerRow);
 
@@ -258,11 +258,11 @@ public partial class DocumentGenerationService : IDocumentGenerationService
 
             var row = new TableRow();
             row.Append(
-                CreateTableCell(index.ToString(), isHeader: false, widthPct: 800, align: JustificationValues.Center),
-                CreateTableCell(amefTypeAndModel, isHeader: false, widthPct: 1800),
-                CreateTableCell(amef.Series, isHeader: false, widthPct: 1500, align: JustificationValues.Center),
-                CreateTableCell(amefAddress, isHeader: false, widthPct: 2900),
-                CreateTableCell(rateStr, isHeader: false, widthPct: 1000, align: JustificationValues.Right)
+                CreateTableCell(index.ToString(), isHeader: false, widthPct: 300, align: JustificationValues.Center),
+                CreateTableCell(amefTypeAndModel, isHeader: false, widthPct: 1050),
+                CreateTableCell(amef.Series, isHeader: false, widthPct: 800, align: JustificationValues.Center),
+                CreateTableCell(amefAddress, isHeader: false, widthPct: 2250),
+                CreateTableCell(rateStr, isHeader: false, widthPct: 600, align: JustificationValues.Right)
             );
             table.AppendChild(row);
             index++;
@@ -278,6 +278,8 @@ public partial class DocumentGenerationService : IDocumentGenerationService
         {
             runProps.Append(new Bold());
         }
+        runProps.Append(new FontSize { Val = "18" });
+        runProps.Append(new FontSizeComplexScript { Val = "18" });
 
         var run = new Run(runProps, new Text(text));
         

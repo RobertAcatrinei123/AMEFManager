@@ -110,8 +110,8 @@ public partial class C802GenerationWindowViewModel : ViewModelBase
             var c802 = new C802Type
             {
                 IdSolicitare = nextId,
-                An = DateTime.Now.Year,
-                Luna = DateTime.Now.Month,
+                An = 2019,
+                Luna = 12,
                 TotalPlataA = amefs.Count,
                 Cif = cleanCif,
                 DenSolicitant = settings.NumeSocietate ?? string.Empty
