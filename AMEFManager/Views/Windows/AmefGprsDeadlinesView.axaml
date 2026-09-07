@@ -1,0 +1,147 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.Windows"
+             xmlns:models="clr-namespace:AMEFManager.Models"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="AMEFManager.Views.Windows.AmefGprsDeadlinesView"
+             x:DataType="vm:AmefGprsDeadlinesViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" Margin="0,0,0,32" MaxWidth="1200" HorizontalAlignment="Left">
+
+            <!-- Page Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,8">
+                <TextBlock Text="Termene GPRS AMEF" FontSize="24" FontWeight="Bold" />
+                <TextBlock Text="Monitorizare și prelungire a termenelor de conectare GPRS pentru aparatele din contracte active."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="14" />
+            </StackPanel>
+
+            <!-- Status Message Banner (Success) -->
+            <Border Background="#D1FAE5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#065F46" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Error Message Banner (Error) -->
+            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#991B1B" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Filter Card -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Filtrare Termene GPRS" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Zile până la expirare (prag):" FontWeight="Medium" />
+                            <NumericUpDown Value="{Binding ThresholdDays}" Minimum="0" Maximum="3650" FormatString="0" Width="180" HorizontalAlignment="Left" />
+                        </StackPanel>
+                        <Button Content="Reîncarcă" Command="{Binding LoadAmefsCommand}" VerticalAlignment="Bottom" Margin="0,0,0,2" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Results Card -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <DockPanel>
+                        <TextBlock Text="Aparate AMEF cu Termen GPRS" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding FilteredAmefs.Count, StringFormat='({0} găsite)'}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </DockPanel>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <!-- Loading Indicator -->
+                    <StackPanel IsVisible="{Binding IsLoading}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="12"
+                                Margin="0,20">
+                        <ProgressBar IsIndeterminate="True" Width="200" />
+                        <TextBlock Text="Se încarcă aparatele..."
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+
+                    <!-- Empty state -->
+                    <TextBlock Text="Nu există aparate AMEF cu GPRS care expiră în intervalul selectat."
+                               IsVisible="{Binding !FilteredAmefs.Count}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               FontStyle="Italic"
+                               Margin="0,8" />
+
+                    <!-- Table Header -->
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            IsVisible="{Binding FilteredAmefs.Count}">
+                        <Grid ColumnDefinitions="140,120,110,120,100,*,Auto">
+                            <TextBlock Grid.Column="0" Text="Model" FontWeight="Bold" />
+                            <TextBlock Grid.Column="1" Text="Serie" FontWeight="Bold" />
+                            <TextBlock Grid.Column="2" Text="NUI" FontWeight="Bold" />
+                            <TextBlock Grid.Column="3" Text="Expirare GPRS" FontWeight="Bold" />
+                            <TextBlock Grid.Column="4" Text="Contract" FontWeight="Bold" />
+                            <TextBlock Grid.Column="5" Text="Client" FontWeight="Bold" />
+                            <TextBlock Grid.Column="6" Text="Prelungire Termen" FontWeight="Bold" MinWidth="260" TextAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Table Rows -->
+                    <ItemsControl ItemsSource="{Binding FilteredAmefs}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:Amef">
+                                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12,10"
+                                        Margin="0,0,0,6">
+                                    <Grid ColumnDefinitions="140,120,110,120,100,*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Model}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Series}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding NUI}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding ConnectionExpirationDate, StringFormat='{}{0:dd.MM.yyyy}', TargetNullValue='-'}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding Contract.Number, StringFormat='#{0}'}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="5" Text="{Binding Contract.Client.Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <Button Content="+1 lună"
+                                                    Classes="accent"
+                                                    Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).ExtendOneMonthCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,6"
+                                                    FontSize="12" />
+                                            <Button Content="+4 luni"
+                                                    Classes="accent"
+                                                    Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).ExtendFourMonthsCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,6"
+                                                    FontSize="12" />
+                                            <Button Content="+12 luni"
+                                                    Classes="accent"
+                                                    Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).ExtendTwelveMonthsCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,6"
+                                                    FontSize="12" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

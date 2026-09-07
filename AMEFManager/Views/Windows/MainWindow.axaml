@@ -40,6 +40,10 @@
                                 <MenuItem Header="F4102" Command="{Binding NavigateCommand}" CommandParameter="F4102"></MenuItem>
                                 <MenuItem Header="F4103" Command="{Binding NavigateCommand}" CommandParameter="F4103"></MenuItem>
                         </MenuItem>
+                        <MenuItem Header="Termene">
+                                <MenuItem Header="Termene Contracte" Command="{Binding NavigateCommand}" CommandParameter="ContractDeadlines" />
+                                <MenuItem Header="Termene GPRS AMEF" Command="{Binding NavigateCommand}" CommandParameter="AmefGprsDeadlines" />
+                        </MenuItem>
                         <MenuItem Header="Utilitare">
                                 <MenuItem Header="Setari" Command="{Binding NavigateCommand}" CommandParameter="Settings"></MenuItem>
                                 <MenuItem Header="Backup" Command="{Binding NavigateCommand}" CommandParameter="Backup"></MenuItem>

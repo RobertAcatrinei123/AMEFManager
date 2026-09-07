@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AMEFManager.ViewModels.Windows"
+             xmlns:models="clr-namespace:AMEFManager.Models"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
+             x:Class="AMEFManager.Views.Windows.ContractDeadlinesView"
+             x:DataType="vm:ContractDeadlinesViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" Margin="0,0,0,32" MaxWidth="1100" HorizontalAlignment="Left">
+
+            <!-- Page Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,8">
+                <TextBlock Text="Termene Contracte" FontSize="24" FontWeight="Bold" />
+                <TextBlock Text="Monitorizare și acțiuni pentru contractele active expirate sau care urmează să expire."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="14" />
+            </StackPanel>
+
+            <!-- Status Message Banner (Success) -->
+            <Border Background="#D1FAE5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#065F46" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Error Message Banner (Error) -->
+            <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="14,10"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#991B1B" FontWeight="Medium" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Filter Card -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Filtrare Termene" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Zile până la expirare (prag):" FontWeight="Medium" />
+                            <NumericUpDown Value="{Binding ThresholdDays}" Minimum="0" Maximum="3650" FormatString="0" Width="180" HorizontalAlignment="Left" />
+                        </StackPanel>
+                        <Button Content="Reîncarcă" Command="{Binding LoadContractsCommand}" VerticalAlignment="Bottom" Margin="0,0,0,2" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Results Card -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <DockPanel>
+                        <TextBlock Text="Contracte" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding FilteredContracts.Count, StringFormat='({0} găsite)'}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </DockPanel>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <!-- Loading Indicator -->
+                    <StackPanel IsVisible="{Binding IsLoading}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="12"
+                                Margin="0,20">
+                        <ProgressBar IsIndeterminate="True" Width="200" />
+                        <TextBlock Text="Se încarcă contractele..."
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+
+                    <!-- Empty state -->
+                    <TextBlock Text="Nu există contracte care expiră în intervalul selectat."
+                               IsVisible="{Binding !FilteredContracts.Count}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               FontStyle="Italic"
+                               Margin="0,8" />
+
+                    <!-- Table Header -->
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            IsVisible="{Binding FilteredContracts.Count}">
+                        <Grid ColumnDefinitions="140,140,*,Auto">
+                            <TextBlock Grid.Column="0" Text="Nr. Contract" FontWeight="Bold" />
+                            <TextBlock Grid.Column="1" Text="Data Expirării" FontWeight="Bold" />
+                            <TextBlock Grid.Column="2" Text="Client" FontWeight="Bold" />
+                            <TextBlock Grid.Column="3" Text="Acțiuni" FontWeight="Bold" MinWidth="240" TextAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Table Rows -->
+                    <ItemsControl ItemsSource="{Binding FilteredContracts}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:Contract">
+                                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12,10"
+                                        Margin="0,0,0,6">
+                                    <Grid ColumnDefinitions="140,140,*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Number, StringFormat='#{0}'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding ValidUntil, StringFormat='{}{0:dd.MM.yyyy}'}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Client.Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <Button Content="Prelungește 1 an"
+                                                    Classes="accent"
+                                                    Command="{Binding $parent[UserControl].((vm:ContractDeadlinesViewModel)DataContext).ExtendOneYearCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="10,6"
+                                                    FontSize="12" />
+                                            <Button Content="Dezactivează"
+                                                    Background="#EF4444"
+                                                    Foreground="White"
+                                                    Command="{Binding $parent[UserControl].((vm:ContractDeadlinesViewModel)DataContext).DeactivateContractCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="10,6"
+                                                    FontSize="12" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

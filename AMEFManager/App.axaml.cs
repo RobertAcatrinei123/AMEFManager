@@ -85,6 +85,8 @@ public partial class App : Application
         services.AddTransient<C802GenerationWindowViewModel>();
         services.AddTransient<F4102GenerationWindowViewModel>();
         services.AddTransient<F4103GenerationWindowViewModel>();
+        services.AddTransient<ContractDeadlinesViewModel>();
+        services.AddTransient<AmefGprsDeadlinesViewModel>();
         services.AddTransient<DocumentGenerationService>();
         services.AddTransient<IDocumentGenerationService, DocumentGenerationService>();
         Services = services.BuildServiceProvider();

@@ -13,13 +13,16 @@ namespace AMEFManager.ViewModels.UserControls;
 public partial class AmefMultiSelectUserControlViewModel : ViewModelBase, IDisposable
 {
     private readonly AmefService _amefService;
+    private readonly ClientService? _clientService;
     private List<Amef> _allAmefs = [];
+    private List<Contract> _allContracts = [];
 
     public Func<IEnumerable<Amef>, List<string>>? Validator { get; set; }
 
-    public AmefMultiSelectUserControlViewModel(AmefService amefService)
+    public AmefMultiSelectUserControlViewModel(AmefService amefService, ClientService? clientService = null)
     {
         _amefService = amefService;
+        _clientService = clientService;
         SelectedAmefs = new ObservableCollection<Amef>();
         LoadAmefsCommand.Execute(null);
     }
@@ -34,8 +37,19 @@ public partial class AmefMultiSelectUserControlViewModel : ViewModelBase, IDispo
     [ObservableProperty] private string? _series;
     [ObservableProperty] private string? _nui;
 
+    [ObservableProperty] private ObservableCollection<Client> _availableClients = [];
+    [ObservableProperty] private Client? _selectedClientFilter;
+    [ObservableProperty] private string? _clientFilter;
+
     [ObservableProperty] private ObservableCollection<Contract> _availableContracts = [];
     [ObservableProperty] private Contract? _selectedContractFilter;
+
+    [RelayCommand]
+    private void ClearClientFilter()
+    {
+        ClientFilter = null;
+        SelectedClientFilter = null;
+    }
 
     [RelayCommand]
     private void ClearContractFilter()
@@ -49,17 +63,72 @@ public partial class AmefMultiSelectUserControlViewModel : ViewModelBase, IDispo
         IsLoading = true;
         _allAmefs = await _amefService.FindAll();
         
-        var contracts = _allAmefs
+        _allContracts = _allAmefs
             .Select(a => a.Contract)
+            .Where(c => c != null)
             .GroupBy(c => c!.Id)
-            .Select(g => g.First())
-            .OrderByDescending(c => c!.Number)
+            .Select(g => g.First()!)
+            .OrderByDescending(c => c.Number)
             .ToList();
-            
-        AvailableContracts = new ObservableCollection<Contract>(contracts!);
-        
+
+        if (_clientService != null)
+        {
+            var clients = await _clientService.FindAll();
+            AvailableClients = new ObservableCollection<Client>(clients.OrderBy(c => c.Name));
+        }
+        else
+        {
+            var clients = _allAmefs
+                .Select(a => a.Contract?.Client)
+                .Where(c => c != null)
+                .GroupBy(c => c!.Id)
+                .Select(g => g.First()!)
+                .OrderBy(c => c.Name)
+                .ToList();
+            AvailableClients = new ObservableCollection<Client>(clients);
+        }
+
+        UpdateAvailableContracts();
         ApplyFilter();
         IsLoading = false;
+    }
+
+    private void UpdateAvailableContracts()
+    {
+        var contracts = _allContracts;
+        if (!string.IsNullOrWhiteSpace(ClientFilter))
+        {
+            contracts = contracts
+                .Where(c => c.Client != null && (
+                    c.Client.Name.Contains(ClientFilter, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrWhiteSpace(c.Client.NationalIdentifier) && c.Client.NationalIdentifier.Contains(ClientFilter, StringComparison.OrdinalIgnoreCase))
+                ))
+                .ToList();
+        }
+        else if (SelectedClientFilter != null)
+        {
+            contracts = contracts
+                .Where(c => c.ClientId == SelectedClientFilter.Id || c.Client?.Id == SelectedClientFilter.Id)
+                .ToList();
+        }
+        AvailableContracts = new ObservableCollection<Contract>(contracts);
+
+        if (SelectedContractFilter != null && !AvailableContracts.Any(c => c.Id == SelectedContractFilter.Id))
+        {
+            SelectedContractFilter = null;
+        }
+    }
+
+    partial void OnClientFilterChanged(string? value)
+    {
+        UpdateAvailableContracts();
+        ApplyFilter();
+    }
+
+    partial void OnSelectedClientFilterChanged(Client? value)
+    {
+        UpdateAvailableContracts();
+        ApplyFilter();
     }
 
     partial void OnAmefToAddChanged(Amef? value)
@@ -102,6 +171,11 @@ public partial class AmefMultiSelectUserControlViewModel : ViewModelBase, IDispo
             StartsWith(a.Model, Model) &&
             StartsWith(a.Series, Series) &&
             StartsWith(a.NUI, Nui) &&
+            (string.IsNullOrWhiteSpace(ClientFilter) || (a.Contract?.Client != null && (
+                a.Contract.Client.Name.Contains(ClientFilter, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(a.Contract.Client.NationalIdentifier) && a.Contract.Client.NationalIdentifier.Contains(ClientFilter, StringComparison.OrdinalIgnoreCase))
+            ))) &&
+            (SelectedClientFilter == null || (a.Contract != null && (a.Contract.ClientId == SelectedClientFilter.Id || a.Contract.Client?.Id == SelectedClientFilter.Id))) &&
             (SelectedContractFilter == null || a.Contract?.Id == SelectedContractFilter.Id) &&
             !SelectedAmefs.Contains(a)
         ).OrderByDescending(x => x.Id).ToList();

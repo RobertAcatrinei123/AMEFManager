@@ -109,6 +109,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             "TrainingSheetGeneration" => _currentScope.ServiceProvider.GetRequiredService<TrainingSheetGenerationWindowViewModel>(),
             "SealingDocumentGeneration" => _currentScope.ServiceProvider.GetRequiredService<SealingDocumentGenerationWindowViewModel>(),
             "DeliveryDocumentGeneration" => _currentScope.ServiceProvider.GetRequiredService<DeliveryDocumentGenerationWindowViewModel>(),
+            "ContractDeadlines" => _currentScope.ServiceProvider.GetRequiredService<ContractDeadlinesViewModel>(),
+            "AmefGprsDeadlines" => _currentScope.ServiceProvider.GetRequiredService<AmefGprsDeadlinesViewModel>(),
             _ => throw new ArgumentException("Invalid navigation target")
         };
     }

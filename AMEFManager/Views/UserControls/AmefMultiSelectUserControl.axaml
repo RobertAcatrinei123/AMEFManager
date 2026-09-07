@@ -53,6 +53,21 @@
                         </StackPanel>
 
                         <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
+                            <TextBlock Text="Client" FontWeight="Medium" Margin="0,0,0,4" />
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Text="{Binding ClientFilter}" 
+                                         PlaceholderText="Caută după client..." 
+                                         HorizontalAlignment="Stretch"
+                                         Grid.Column="0" />
+                                <Button Content="✕" 
+                                        Command="{Binding ClearClientFilterCommand}" 
+                                        Grid.Column="1"
+                                        Margin="4,0,0,0"
+                                        ToolTip.Tip="Șterge filtrul de client" />
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="250" Width="350">
                             <TextBlock Text="Contract" FontWeight="Medium" Margin="0,0,0,4" />
                             <Grid ColumnDefinitions="*,Auto">
                                 <ComboBox ItemsSource="{Binding AvailableContracts}" 
