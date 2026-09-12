@@ -40,6 +40,15 @@
                         Padding="20,10" 
                         FontWeight="SemiBold" 
                         HorizontalContentAlignment="Center"/>
+                <Button Name="UnassignButton"
+                        Content="Dezasociază contract" 
+                        Command="{Binding UnassignContractCommand}" 
+                        Background="#F59E0B" 
+                        Foreground="White" 
+                        MinWidth="160" 
+                        Padding="16,10" 
+                        HorizontalContentAlignment="Center"
+                        ToolTip.Tip="Elimină AMEF-ul din contractul asociat"/>
                 <Button Content="Șterge" 
                         Command="{Binding DeleteCommand}" 
                         Background="#ef4444" 

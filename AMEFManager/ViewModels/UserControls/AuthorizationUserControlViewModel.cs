@@ -255,6 +255,11 @@ public partial class AuthorizationUserControlViewModel : ViewModelBase, IDisposa
         var toDelete = SelectedAuthorization;
         AppLogger.LogInfo($"Deleting Authorization: Id={toDelete.Id}, Number={toDelete.Number}, Model={toDelete.Model}");
 
+        if (await _authorizationService.IsAuthorizationInUseAsync(toDelete.Id))
+        {
+            throw new InvalidOperationException("Autorizația nu poate fi ștearsă deoarece este asociată cu unul sau mai multe aparate AMEF.");
+        }
+
         await _authorizationService.Delete(toDelete);
         await _authorizationService.SubmitChanges();
 

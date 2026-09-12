@@ -18,7 +18,7 @@ public class SealingDocumentService : AbstractService<SealingDocument>
         return _entities
             .Include(s => s.Amef)
                 .ThenInclude(a => a.Contract)
-                    .ThenInclude(c => c.Client)
+                    .ThenInclude(c => c!.Client)
             .ToListAsync();
     }
 
@@ -38,7 +38,7 @@ public class SealingDocumentService : AbstractService<SealingDocument>
         return await _entities
             .Include(s => s.Amef)
                 .ThenInclude(a => a.Contract)
-                    .ThenInclude(c => c.Client)
+                    .ThenInclude(c => c!.Client)
             .FirstOrDefaultAsync(s => s.AmefId == amefId);
     }
 }

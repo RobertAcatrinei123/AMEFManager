@@ -53,6 +53,11 @@ public partial class AmefWindowViewModel : ViewModelBase, IDisposable
                 StatusMessage = null;
                 ErrorMessage = null;
                 DeleteCommand.NotifyCanExecuteChanged();
+                UnassignContractCommand.NotifyCanExecuteChanged();
+            }
+            else if (e.PropertyName == nameof(AmefUserControlViewModel.CanUnassignContract))
+            {
+                UnassignContractCommand.NotifyCanExecuteChanged();
             }
         };
         AmefUserControlViewModel.PropertyChanged += _childHandler;
@@ -91,6 +96,8 @@ public partial class AmefWindowViewModel : ViewModelBase, IDisposable
         finally
         {
             AmefUserControlViewModel.IsLoading = false;
+            UnassignContractCommand.NotifyCanExecuteChanged();
+            DeleteCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -123,6 +130,42 @@ public partial class AmefWindowViewModel : ViewModelBase, IDisposable
         finally
         {
             AmefUserControlViewModel.IsLoading = false;
+            UnassignContractCommand.NotifyCanExecuteChanged();
+            DeleteCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private bool CanUnassignContract() => AmefUserControlViewModel.CanUnassignContract;
+
+    [RelayCommand(CanExecute = nameof(CanUnassignContract))]
+    private async Task UnassignContractAsync()
+    {
+        if (!CanUnassignContract()) return;
+
+        StatusMessage = null;
+        ErrorMessage = null;
+        try
+        {
+            AmefUserControlViewModel.IsLoading = true;
+            await AmefUserControlViewModel.UnassignContractAsync();
+            StatusMessage = "Aparatul AMEF a fost dezasociat de pe contract cu succes.";
+            ErrorMessage = null;
+            AppLogger.LogInfo("AMEF unassigned from contract successfully.");
+        }
+        catch (Exception e)
+        {
+            AppLogger.LogError($"Unassign contract failed in AmefWindowViewModel: {e.Message}", e);
+            StatusMessage = null;
+            ErrorMessage = $"A apărut o eroare la dezasociere: {e.Message}";
+            var msg = e.Message;
+            if (e.InnerException != null) msg += "\nInner: " + e.InnerException.Message;
+            await MessageBox.ShowError($"A apărut o eroare la dezasociere:\n{msg}");
+        }
+        finally
+        {
+            AmefUserControlViewModel.IsLoading = false;
+            UnassignContractCommand.NotifyCanExecuteChanged();
+            DeleteCommand.NotifyCanExecuteChanged();
         }
     }
 

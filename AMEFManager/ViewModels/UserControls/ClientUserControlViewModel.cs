@@ -299,22 +299,26 @@ public partial class ClientUserControlViewModel : ViewModelBase, IDisposable
         var toDelete = SelectedClient;
         AppLogger.LogInfo($"Deleting Client: Id={toDelete.Id}, Name={toDelete.Name}, NationalIdentifier={toDelete.NationalIdentifier}");
 
+        if (await _clientService.IsClientInUseAsync(toDelete.Id))
+        {
+            throw new InvalidOperationException("Clientul nu poate fi șters deoarece are contracte asociate.");
+        }
+
         var person = toDelete.Person ?? (toDelete.PersonId > 0 ? await _personService.FindById(toDelete.PersonId) : null);
         var address = toDelete.Address ?? (toDelete.AddressId > 0 ? await _addressService.FindById(toDelete.AddressId) : null);
         var personAddress = person?.Address ?? (person?.AddressId > 0 ? await _addressService.FindById(person.AddressId) : null);
 
+        bool canDeletePerson = person != null && !await _personService.IsPersonInUseAsync(person.Id, excludeClientId: toDelete.Id);
+        int? excludePersonIdForAddress = canDeletePerson ? person?.Id : null;
+        bool canDeleteAddress = address != null && !await _addressService.IsAddressInUseAsync(address.Id, excludePersonId: excludePersonIdForAddress, excludeClientId: toDelete.Id);
+        bool canDeletePersonAddress = canDeletePerson && personAddress != null && (address == null || personAddress.Id != address.Id) &&
+            !await _addressService.IsAddressInUseAsync(personAddress.Id, excludePersonId: person!.Id, excludeClientId: toDelete.Id);
+
         await _clientService.Delete(toDelete);
 
-        try
-        {
-            if (person != null) await _personService.Delete(person);
-            if (address != null) await _addressService.Delete(address);
-            if (personAddress != null && (address == null || personAddress.Id != address.Id)) await _addressService.Delete(personAddress);
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogWarning($"Cascading delete associated records for Client Id={toDelete.Id} threw: {ex.Message}");
-        }
+        if (canDeletePerson) await _personService.Delete(person!);
+        if (canDeleteAddress) await _addressService.Delete(address!);
+        if (canDeletePersonAddress) await _addressService.Delete(personAddress!);
 
         await _clientService.SubmitChanges();
         ClearSelectedClient();

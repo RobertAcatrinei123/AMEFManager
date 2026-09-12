@@ -358,20 +358,18 @@ public partial class PersonUserControlViewModel : ViewModelBase, IDisposable
         var toDelete = SelectedPerson;
         AppLogger.LogInfo($"Deleting Person: Id={toDelete.Id}, Name={toDelete.FirstName} {toDelete.LastName}");
 
+        if (await _personService.IsPersonInUseAsync(toDelete.Id))
+        {
+            throw new InvalidOperationException("Persoana nu poate fi ștearsă deoarece este asociată cu unul sau mai mulți clienți.");
+        }
+
         var address = toDelete.Address ?? (toDelete.AddressId > 0 ? await _addressService.FindById(toDelete.AddressId) : null);
+        bool canDeleteAddress = address != null && !await _addressService.IsAddressInUseAsync(address.Id, excludePersonId: toDelete.Id);
 
         await _personService.Delete(toDelete);
-
-        try
+        if (canDeleteAddress)
         {
-            if (address != null)
-            {
-                await _addressService.Delete(address);
-            }
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogWarning($"Cascading delete address for Person Id={toDelete.Id} threw: {ex.Message}");
+            await _addressService.Delete(address!);
         }
 
         await _personService.SubmitChanges();

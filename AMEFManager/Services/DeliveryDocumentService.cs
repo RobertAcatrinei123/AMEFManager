@@ -18,7 +18,7 @@ public class DeliveryDocumentService : AbstractService<DeliveryDocument>
         return await _context.Set<DeliveryDocument>()
             .Include(d => d.Amef)
                 .ThenInclude(a => a.Contract)
-                    .ThenInclude(c => c.Client)
+                    .ThenInclude(c => c!.Client)
             .ToListAsync();
     }
 
@@ -38,7 +38,7 @@ public class DeliveryDocumentService : AbstractService<DeliveryDocument>
         return await _entities
             .Include(d => d.Amef)
                 .ThenInclude(a => a.Contract)
-                    .ThenInclude(c => c.Client)
+                    .ThenInclude(c => c!.Client)
             .FirstOrDefaultAsync(d => d.AmefId == amefId);
     }
 }

@@ -15,4 +15,9 @@ public class ContractTypeService : AbstractService<ContractType>
     {
         return await _entities.FirstOrDefaultAsync(c => c.Name == name);
     }
+
+    public async Task<bool> IsContractTypeInUseAsync(int contractTypeId)
+    {
+        return await _context.Contracts.AnyAsync(c => c.ContractTypeId == contractTypeId);
+    }
 }

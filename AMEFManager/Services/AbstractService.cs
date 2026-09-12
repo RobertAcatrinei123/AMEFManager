@@ -77,6 +77,19 @@ public abstract class AbstractService<T> : IService<T> where T : class
         catch (Exception ex)
         {
             AppLogger.LogError($"[AbstractService<{typeof(T).Name}>] Failed to submit database changes: {ex.Message}", ex);
+            foreach (var entry in _context.ChangeTracker.Entries())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        entry.State = EntityState.Detached;
+                        break;
+                    case EntityState.Deleted:
+                    case EntityState.Modified:
+                        entry.State = EntityState.Unchanged;
+                        break;
+                }
+            }
             throw;
         }
     }

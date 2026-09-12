@@ -93,7 +93,11 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _headerTitle = "Date Tehnice AMEF";
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private ObservableCollection<Amef> _filteredAmefs = [];
-    [ObservableProperty] private Amef? _selectedAmef;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanUnassignContract))]
+    private Amef? _selectedAmef;
+
+    public bool CanUnassignContract => SelectedAmef != null && (SelectedAmef.ContractId.HasValue || SelectedAmef.Contract != null);
 
     [ObservableProperty] private string? _model;
     [ObservableProperty] private string? _series;
@@ -151,6 +155,9 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
 
     partial void OnSelectedAmefChanged(Amef? value)
     {
+        OnPropertyChanged(nameof(CanUnassignContract));
+        UnassignContractCommand.NotifyCanExecuteChanged();
+
         if (_hasBeenFiltered)
         {
             return;
@@ -397,31 +404,49 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
         var toDelete = SelectedAmef;
         AppLogger.LogInfo($"Deleting AMEF: Id={toDelete.Id}, NUI={toDelete.NUI}, Series={toDelete.Series}");
 
-        var address = toDelete.Address ?? (toDelete.AddressId.HasValue && toDelete.AddressId.Value > 0 ? await _addressService.FindById(toDelete.AddressId.Value) : null);
-        var bill = toDelete.Bill ?? (toDelete.BillId.HasValue && toDelete.BillId.Value > 0 ? await _billService.FindById(toDelete.BillId.Value) : null);
-        var auth = toDelete.Authorization ?? (toDelete.AuthorizationId > 0 ? await _authorizationService.FindById(toDelete.AuthorizationId) : null);
+        if (await _amefService.IsAmefInUseAsync(toDelete.Id))
+        {
+            throw new InvalidOperationException("Aparatul AMEF nu poate fi șters deoarece este inclus în documente de predare, sigilare sau declarații C802.");
+        }
 
         await _amefService.Delete(toDelete);
-
-        try
-        {
-            if (address != null) await _addressService.Delete(address);
-            if (bill != null) await _billService.Delete(bill);
-            if (auth != null) await _authorizationService.Delete(auth);
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogWarning($"Cascading delete associated records for AMEF Id={toDelete.Id} threw: {ex.Message}");
-        }
-
         await _amefService.SubmitChanges();
+
         ClearSelectedAmef();
         await LoadAmefsAsync();
-        await AddressUserControlViewModel.LoadAddressesAsync();
-        await BillUserControlViewModel.LoadBillsAsync();
-        await AuthorizationUserControlViewModel.LoadAuthorizationsAsync();
-        await ContractUserControlViewModel.LoadContractsAsync();
         AppLogger.LogInfo($"AMEF Id={toDelete.Id} deleted successfully.");
+    }
+
+    [RelayCommand(CanExecute = nameof(CanUnassignContract))]
+    public async Task UnassignContractAsync()
+    {
+        if (SelectedAmef is null) return;
+        if (!SelectedAmef.ContractId.HasValue && SelectedAmef.Contract == null) return;
+
+        var toUpdate = SelectedAmef;
+        AppLogger.LogInfo($"Unassigning AMEF Id={toUpdate.Id}, Series={toUpdate.Series} from ContractId={toUpdate.ContractId}");
+
+        if (toUpdate.Contract?.Amefs != null)
+        {
+            toUpdate.Contract.Amefs.Remove(toUpdate);
+        }
+        toUpdate.ContractId = null;
+        toUpdate.Contract = null;
+
+        await _amefService.Update(toUpdate);
+        await _amefService.SubmitChanges();
+
+        ContractUserControlViewModel.ClearSelectedContractCommand.Execute(null);
+
+        var amefId = toUpdate.Id;
+        await LoadAmefsAsync();
+
+        var reloaded = FilteredAmefs.FirstOrDefault(a => a.Id == amefId) ?? _allAmefs.FirstOrDefault(a => a.Id == amefId);
+        SelectedAmef = null;
+        SelectedAmef = reloaded;
+
+        await ContractUserControlViewModel.LoadContractsAsync();
+        AppLogger.LogInfo($"AMEF Id={amefId} successfully unassigned from contract.");
     }
 
     public void Dispose()

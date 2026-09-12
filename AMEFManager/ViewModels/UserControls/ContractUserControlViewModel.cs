@@ -300,6 +300,11 @@ public partial class ContractUserControlViewModel : ViewModelBase, IDisposable
         var toDelete = SelectedContract;
         AppLogger.LogInfo($"Deleting Contract: Id={toDelete.Id}, Number={toDelete.Number}");
 
+        if (await _contractService.IsContractInUseAsync(toDelete.Id))
+        {
+            throw new InvalidOperationException("Contractul nu poate fi șters deoarece are aparate AMEF sau acte adiționale asociate.");
+        }
+
         await _contractService.Delete(toDelete);
         await _contractService.SubmitChanges();
         ClearSelectedContract();

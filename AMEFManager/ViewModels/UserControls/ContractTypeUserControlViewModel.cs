@@ -216,6 +216,11 @@ public partial class ContractTypeUserControlViewModel : ViewModelBase, IDisposab
         var selected = SelectedContractType;
         AppLogger.LogInfo($"Deleting ContractType: Id={selected.Id}, Name={selected.Name}");
 
+        if (await _contractTypeService.IsContractTypeInUseAsync(selected.Id))
+        {
+            throw new InvalidOperationException("Tipul de contract nu poate fi șters deoarece este utilizat în unul sau mai multe contracte.");
+        }
+
         await _contractTypeService.Delete(selected);
         await _contractTypeService.SubmitChanges();
 

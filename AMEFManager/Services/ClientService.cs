@@ -29,4 +29,9 @@ public class ClientService : AbstractService<Client>
     {
         return await _entities.FirstOrDefaultAsync(c => c.RegistrationNumber == registrationNumber);
     }
+
+    public async Task<bool> IsClientInUseAsync(int clientId)
+    {
+        return await _context.Contracts.AnyAsync(c => c.ClientId == clientId);
+    }
 }

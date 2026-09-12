@@ -15,4 +15,9 @@ public class BillService : AbstractService<Bill>
     {
         return await _entities.FirstOrDefaultAsync(b => b.BillSeries == series && b.BillNumber == number);
     }
+
+    public async Task<bool> IsBillInUseAsync(int billId)
+    {
+        return await _context.Amefs.AnyAsync(a => a.BillId == billId);
+    }
 }

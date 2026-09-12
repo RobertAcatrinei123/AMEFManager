@@ -232,6 +232,11 @@ public partial class BillUserControlViewModel : ViewModelBase, IDisposable
         var toDelete = SelectedBill;
         AppLogger.LogInfo($"Deleting Bill: Id={toDelete.Id}, Series={toDelete.BillSeries}, Number={toDelete.BillNumber}");
 
+        if (await _billService.IsBillInUseAsync(toDelete.Id))
+        {
+            throw new InvalidOperationException("Factura nu poate fi ștearsă deoarece este asociată cu unul sau mai multe aparate AMEF.");
+        }
+
         await _billService.Delete(toDelete);
         await _billService.SubmitChanges();
 

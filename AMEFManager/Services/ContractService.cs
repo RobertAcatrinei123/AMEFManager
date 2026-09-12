@@ -33,4 +33,10 @@ public class ContractService : AbstractService<Contract>
     {
         return await _entities.FirstOrDefaultAsync(c => c.Number == number && c.ClientId == clientId);
     }
+
+    public async Task<bool> IsContractInUseAsync(int contractId)
+    {
+        return await _context.Amefs.AnyAsync(a => a.ContractId == contractId)
+            || await _context.AdditionalDocuments.AnyAsync(ad => ad.ContractId == contractId);
+    }
 }

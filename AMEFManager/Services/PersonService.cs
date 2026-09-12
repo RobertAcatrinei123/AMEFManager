@@ -26,4 +26,9 @@ public class PersonService : AbstractService<Person>
     {
         return await _entities.FirstOrDefaultAsync(p => p.Cnp == cnp);
     }
+
+    public async Task<bool> IsPersonInUseAsync(int personId, int? excludeClientId = null)
+    {
+        return await _context.Clients.AnyAsync(c => c.PersonId == personId && (!excludeClientId.HasValue || c.Id != excludeClientId.Value));
+    }
 }

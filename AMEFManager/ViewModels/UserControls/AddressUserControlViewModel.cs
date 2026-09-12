@@ -289,6 +289,11 @@ public partial class AddressUserControlViewModel : ViewModelBase, IDisposable
         var toDelete = SelectedAddress;
         AppLogger.LogInfo($"Deleting Address: Id={toDelete.Id}, City={toDelete.City}, Street={toDelete.Street}");
 
+        if (await _addressService.IsAddressInUseAsync(toDelete.Id))
+        {
+            throw new InvalidOperationException("Adresa nu poate fi ștearsă deoarece este utilizată de unul sau mai mulți clienți, persoane sau aparate AMEF.");
+        }
+
         await _addressService.Delete(toDelete);
         await _addressService.SubmitChanges();
 

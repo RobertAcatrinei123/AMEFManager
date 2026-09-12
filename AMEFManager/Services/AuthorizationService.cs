@@ -10,4 +10,9 @@ public class AuthorizationService : AbstractService<Authorization>
     public AuthorizationService(AppDbContext context) : base(context)
     {
     }
+
+    public async Task<bool> IsAuthorizationInUseAsync(int authorizationId)
+    {
+        return await _context.Amefs.AnyAsync(a => a.AuthorizationId == authorizationId);
+    }
 }
