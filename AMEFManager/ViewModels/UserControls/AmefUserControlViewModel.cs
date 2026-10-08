@@ -107,6 +107,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string? _connectionMethod;
     [ObservableProperty] private DateTimeOffset? _connectionExpirationDate;
     [ObservableProperty] private string? _servicePassword;
+    [ObservableProperty] private bool _isActive = true;
 
     [RelayCommand]
     private void ClearSelectedAmef()
@@ -126,6 +127,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
             ConnectionMethod = null;
             ConnectionExpirationDate = null;
             ServicePassword = null;
+            IsActive = true;
             
             BillUserControlViewModel.ClearSelectedBillCommand.Execute(null);
             AddressUserControlViewModel.ClearSelectedAddressCommand.Execute(null);
@@ -179,6 +181,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
                 ConnectionMethod = null;
                 ConnectionExpirationDate = null;
                 ServicePassword = null;
+                IsActive = true;
                 
                 BillUserControlViewModel.ClearSelectedBillCommand.Execute(null);
                 AddressUserControlViewModel.ClearSelectedAddressCommand.Execute(null);
@@ -195,6 +198,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
                 ConnectionMethod = value.ConnectionMethod;
                 ConnectionExpirationDate = DateHelper.ToDateTimeOffset(value.ConnectionExpirationDate);
                 ServicePassword = value.ServicePassword;
+                IsActive = value.IsActive;
 
                 BillUserControlViewModel.SelectedBill = value.BillId.HasValue 
                     ? BillUserControlViewModel.FilteredBills.FirstOrDefault(b => b.Id == value.BillId.Value) ?? value.Bill
@@ -293,6 +297,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
                 ConnectionMethod = ConnectionMethod,
                 ConnectionExpirationDate = DateHelper.ToDateOnly(ConnectionExpirationDate),
                 ServicePassword = ServicePassword,
+                IsActive = IsActive,
                 AuthorizationId = AuthorizationUserControlViewModel.SelectedAuthorization?.Id ?? 0
             };
         }
@@ -344,6 +349,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
                 savedAmef.ConnectionMethod = ConnectionMethod;
                 savedAmef.ConnectionExpirationDate = DateHelper.ToDateOnly(ConnectionExpirationDate);
                 savedAmef.ServicePassword = ServicePassword;
+                savedAmef.IsActive = IsActive;
                 savedAmef.Address = address;
                 savedAmef.AddressId = address?.Id;
                 savedAmef.Bill = savedBill;
@@ -357,6 +363,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
             else
             {
                 savedAmef = GetSelectedAmef();
+                savedAmef.IsActive = IsActive;
                 savedAmef.Address = address;
                 savedAmef.AddressId = address?.Id;
                 savedAmef.Bill = savedBill;
@@ -378,6 +385,7 @@ public partial class AmefUserControlViewModel : ViewModelBase, IDisposable
             savedAmef.ConnectionMethod = ConnectionMethod;
             savedAmef.ConnectionExpirationDate = DateHelper.ToDateOnly(ConnectionExpirationDate);
             savedAmef.ServicePassword = ServicePassword;
+            savedAmef.IsActive = IsActive;
             savedAmef.Address = address;
             savedAmef.AddressId = address?.Id;
             savedAmef.Bill = savedBill;

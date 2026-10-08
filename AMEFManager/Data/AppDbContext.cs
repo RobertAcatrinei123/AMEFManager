@@ -71,6 +71,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Amef>()
             .HasIndex(a => a.Series)
             .IsUnique(); 
+
+        modelBuilder.Entity<Amef>()
+            .Property(a => a.IsActive)
+            .HasDefaultValue(true)
+            .ValueGeneratedNever(); 
         
         modelBuilder.Entity<Bill>()
             .HasIndex(a => new {a.BillSeries, a.BillNumber})

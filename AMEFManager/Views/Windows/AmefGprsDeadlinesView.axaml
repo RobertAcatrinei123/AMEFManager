@@ -54,11 +54,21 @@
                     BorderThickness="1" CornerRadius="8" Padding="20,16">
                 <StackPanel Spacing="12">
                     <DockPanel>
-                        <TextBlock Text="Aparate AMEF cu Termen GPRS" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding FilteredAmefs.Count, StringFormat='({0} găsite)'}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="8,0,0,0"/>
+                        <Button DockPanel.Dock="Right"
+                                Content="Exportă"
+                                Classes="accent"
+                                Command="{Binding ExportToClipboardCommand}"
+                                ToolTip.Tip="Copiază datele aparatelor AMEF grupate pe clienți în clipboard"
+                                VerticalAlignment="Center"
+                                Padding="12,6"
+                                FontSize="13" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Aparate AMEF cu Termen GPRS" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding FilteredAmefs.Count, StringFormat='({0} găsite)'}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                        </StackPanel>
                     </DockPanel>
                     <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
@@ -93,7 +103,7 @@
                             <TextBlock Grid.Column="3" Text="Expirare GPRS" FontWeight="Bold" />
                             <TextBlock Grid.Column="4" Text="Contract" FontWeight="Bold" />
                             <TextBlock Grid.Column="5" Text="Client" FontWeight="Bold" />
-                            <TextBlock Grid.Column="6" Text="Prelungire Termen" FontWeight="Bold" MinWidth="260" TextAlignment="Center" />
+                            <TextBlock Grid.Column="6" Text="Acțiuni" FontWeight="Bold" MinWidth="360" TextAlignment="Center" />
                         </Grid>
                     </Border>
 
@@ -130,6 +140,95 @@
                                             <Button Content="+12 luni"
                                                     Classes="accent"
                                                     Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).ExtendTwelveMonthsCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,6"
+                                                    FontSize="12" />
+                                            <Button Content="Dezactivează"
+                                                    Background="#EF4444"
+                                                    Foreground="White"
+                                                    Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).DeactivateAmefCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,6"
+                                                    FontSize="12" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Deactivated AMEFs Card -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="20,16">
+                <StackPanel Spacing="12">
+                    <DockPanel>
+                        <TextBlock Text="Aparate AMEF Dezactivate (GPRS)" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding DeactivatedAmefs.Count, StringFormat='({0} găsite)'}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </DockPanel>
+                    <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <!-- Empty state -->
+                    <TextBlock Text="Nu există aparate AMEF dezactivate cu conexiune GPRS."
+                               IsVisible="{Binding !DeactivatedAmefs.Count}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               FontStyle="Italic"
+                               Margin="0,8" />
+
+                    <!-- Table Header -->
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            IsVisible="{Binding DeactivatedAmefs.Count}">
+                        <Grid ColumnDefinitions="140,120,110,120,100,*,Auto">
+                            <TextBlock Grid.Column="0" Text="Model" FontWeight="Bold" />
+                            <TextBlock Grid.Column="1" Text="Serie" FontWeight="Bold" />
+                            <TextBlock Grid.Column="2" Text="NUI" FontWeight="Bold" />
+                            <TextBlock Grid.Column="3" Text="Expirare GPRS" FontWeight="Bold" />
+                            <TextBlock Grid.Column="4" Text="Contract" FontWeight="Bold" />
+                            <TextBlock Grid.Column="5" Text="Client" FontWeight="Bold" />
+                            <TextBlock Grid.Column="6" Text="Acțiuni" FontWeight="Bold" MinWidth="360" TextAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Table Rows -->
+                    <ItemsControl ItemsSource="{Binding DeactivatedAmefs}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:Amef">
+                                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12,10"
+                                        Margin="0,0,0,6">
+                                    <Grid ColumnDefinitions="140,120,110,120,100,*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Model}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Series}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding NUI}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding ConnectionExpirationDate, StringFormat='{}{0:dd.MM.yyyy}', TargetNullValue='-'}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding Contract.Number, StringFormat='#{0}'}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="5" Text="{Binding Contract.Client.Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <Button Content="Activează 1 lună"
+                                                    Classes="accent"
+                                                    Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).ActivateOneMonthCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,6"
+                                                    FontSize="12" />
+                                            <Button Content="Activează 4 luni"
+                                                    Classes="accent"
+                                                    Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).ActivateFourMonthsCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,6"
+                                                    FontSize="12" />
+                                            <Button Content="Activează 12 luni"
+                                                    Classes="accent"
+                                                    Command="{Binding $parent[UserControl].((vm:AmefGprsDeadlinesViewModel)DataContext).ActivateTwelveMonthsCommand}"
                                                     CommandParameter="{Binding}"
                                                     Padding="8,6"
                                                     FontSize="12" />

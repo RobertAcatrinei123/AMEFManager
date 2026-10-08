@@ -89,6 +89,7 @@ public partial class App : Application
         services.AddTransient<AmefGprsDeadlinesViewModel>();
         services.AddTransient<DocumentGenerationService>();
         services.AddTransient<IDocumentGenerationService, DocumentGenerationService>();
+        services.AddSingleton<IClipboardService, AvaloniaClipboardService>();
         Services = services.BuildServiceProvider();
         
         using (var scope = Services.CreateScope())

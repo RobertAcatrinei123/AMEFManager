@@ -54,11 +54,21 @@
                     BorderThickness="1" CornerRadius="8" Padding="20,16">
                 <StackPanel Spacing="12">
                     <DockPanel>
-                        <TextBlock Text="Contracte" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding FilteredContracts.Count, StringFormat='({0} găsite)'}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="8,0,0,0"/>
+                        <Button DockPanel.Dock="Right"
+                                Content="Exportă"
+                                Classes="accent"
+                                Command="{Binding ExportToClipboardCommand}"
+                                ToolTip.Tip="Copiază datele contractelor în clipboard"
+                                VerticalAlignment="Center"
+                                Padding="12,6"
+                                FontSize="13" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Contracte" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding FilteredContracts.Count, StringFormat='({0} găsite)'}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                        </StackPanel>
                     </DockPanel>
                     <Separator Margin="0,0,0,8" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 

@@ -15,6 +15,7 @@ public partial class ContractDeadlinesViewModel : ViewModelBase, IDisposable
 {
     private readonly ContractService _contractService;
     private readonly Func<DateOnly>? _todayProvider;
+    private readonly IClipboardService _clipboardService;
     private DateOnly? _overrideReferenceDate;
     private List<Contract> _allContracts = [];
 
@@ -43,10 +44,14 @@ public partial class ContractDeadlinesViewModel : ViewModelBase, IDisposable
 
     public DateOnly Today => _overrideReferenceDate ?? _todayProvider?.Invoke() ?? DateOnly.FromDateTime(DateTime.Today);
 
-    public ContractDeadlinesViewModel(ContractService contractService, Func<DateOnly>? todayProvider = null)
+    public ContractDeadlinesViewModel(
+        ContractService contractService,
+        Func<DateOnly>? todayProvider = null,
+        IClipboardService? clipboardService = null)
     {
         _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
         _todayProvider = todayProvider;
+        _clipboardService = clipboardService ?? new AvaloniaClipboardService();
         _ = LoadContractsAsync();
     }
 
@@ -155,6 +160,51 @@ public partial class ContractDeadlinesViewModel : ViewModelBase, IDisposable
     }
 
     public Task ExtendContractOneYearAsync(Contract contract) => ExtendOneYearAsync(contract);
+
+    public string GenerateExportText()
+    {
+        if (FilteredContracts.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var lines = new List<string>();
+        foreach (var contract in FilteredContracts)
+        {
+            var clientName = !string.IsNullOrWhiteSpace(contract.Client?.Name)
+                ? contract.Client.Name.Trim()
+                : $"Contract {contract.Number}";
+            var value = contract.Type?.Value ?? 0;
+            var activeAmefCount = contract.Amefs?.Count(a => a.IsActive) ?? 0;
+
+            lines.Add($"{clientName} {value}lei {activeAmefCount} amef");
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    [RelayCommand]
+    public async Task ExportToClipboardAsync()
+    {
+        var text = GenerateExportText();
+        if (string.IsNullOrEmpty(text))
+        {
+            StatusMessage = "Nu există contracte în listă pentru export.";
+            return;
+        }
+
+        try
+        {
+            await _clipboardService.SetTextAsync(text);
+            StatusMessage = $"{FilteredContracts.Count} contracte exportate în clipboard.";
+            AppLogger.LogInfo($"Exported {FilteredContracts.Count} contracts to clipboard.");
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError($"Failed to export contracts to clipboard: {ex.Message}", ex);
+            ErrorMessage = $"Eroare la exportul în clipboard: {ex.Message}";
+        }
+    }
 
     public void Dispose()
     {

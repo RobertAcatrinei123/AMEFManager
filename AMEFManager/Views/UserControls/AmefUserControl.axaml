@@ -104,6 +104,10 @@
                             <TextBlock Text="Parolă service" FontWeight="Medium" Margin="0,0,0,4" />
                             <TextBox Text="{Binding ServicePassword}" PlaceholderText="Ex: 123456" />
                         </StackPanel>
+
+                        <StackPanel Margin="0,0,16,12" MinWidth="150" Width="200" VerticalAlignment="Center">
+                            <CheckBox IsChecked="{Binding IsActive}" Content="Activ" Margin="0,20,0,0" FontWeight="Medium" />
+                        </StackPanel>
                     </WrapPanel>
                 </StackPanel>
             </Border>

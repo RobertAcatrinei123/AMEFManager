@@ -14,6 +14,7 @@ public class Amef
     
     public string? ConnectionMethod { get; set; }
     public DateOnly? ConnectionExpirationDate { get; set; }
+    public bool IsActive { get; set; } = true;
     
     public int? BillId { get; set; }
     public Bill? Bill { get; set; }
